@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">FastPrism</string>
+    <string name="title">FastPrism</string>
+    <string name="caption">文件只保存在应用内部目录。没有暂停或停止，进程结束下载即结束。</string>
+    <string name="label_url">地址</string>
+    <string name="demo_url" translatable="false">https://speed.cloudflare.com/__down?bytes=10485760</string>
+    <string name="demo_relative_path" translatable="false">downloads/fast-prism-10m.bin</string>
+    <string name="action_download">开始下载</string>
+    <string name="action_downloading">正在下载</string>
+    <string name="status_idle">点按开始，下载约 10MB 到内部目录。</string>
+    <string name="path_idle">完成后在这里显示内部路径。</string>
+    <string name="progress_known">已写入 %1$d / %2$d 字节</string>
+    <string name="progress_unknown">已写入 %1$d 字节</string>
+    <string name="status_done">下载完成，共 %1$d 字节</string>
+    <string name="status_failed">下载失败：%1$s</string>
+    <string name="path_value">%1$s</string>
+    <string name="progress_description">下载进度</string>
+</resources>

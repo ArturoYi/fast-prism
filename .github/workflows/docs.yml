@@ -1,0 +1,67 @@
+name: Docs
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "docs/**"
+      - ".github/workflows/docs.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: 部署 Docus 到 GitHub Pages
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: docs/package-lock.json
+
+      - name: 设置 Pages 基路径
+        run: |
+          set -euo pipefail
+          repo="${{ github.event.repository.name }}"
+          owner="${{ github.repository_owner }}"
+          if [ "$repo" = "${owner}.github.io" ]; then
+            echo "NUXT_APP_BASE_URL=/" >> "$GITHUB_ENV"
+            echo "NUXT_SITE_URL=https://${owner}.github.io" >> "$GITHUB_ENV"
+          else
+            echo "NUXT_APP_BASE_URL=/${repo}/" >> "$GITHUB_ENV"
+            echo "NUXT_SITE_URL=https://${owner}.github.io/${repo}" >> "$GITHUB_ENV"
+          fi
+
+      - name: 安装依赖
+        working-directory: docs
+        run: npm ci
+
+      - name: 生成静态站点
+        working-directory: docs
+        run: npm run generate
+
+      - name: 上传 Pages 产物
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/.output/public
+
+      - name: 部署
+        id: deployment
+        uses: actions/deploy-pages@v4

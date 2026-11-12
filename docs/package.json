@@ -1,0 +1,16 @@
+{
+  "name": "fast-prism-docs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nuxt dev --extends docus",
+    "build": "nuxt build --extends docus",
+    "generate": "nuxt generate --extends docus --preset github-pages",
+    "preview": "nuxt preview --extends docus"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.5.0",
+    "docus": "5.15.0",
+    "nuxt": "^4.2.2"
+  }
+}
