@@ -18,20 +18,20 @@ dependencyResolutionManagement {
 
 rootProject.name = "fast-prism"
 
-include(":fast-prism")
-include(":fast-prism:core")
-include(":fast-prism:engine")
-include(":fast-prism:testing")
-include(":fast-prism:sample")
+include(":fast-dowload")
+include(":fast-dowload:core")
+include(":fast-dowload:engine")
+include(":fast-dowload:testing")
+include(":fast-dowload:sample")
 
-// FastPrism 后续子模块，当前不启用。
-// include(":fast-prism:android")
-// include(":fast-prism:okhttp")
-// include(":fast-prism:ktx")
-// include(":fast-prism:rx")
-// include(":fast-prism:notification")
-// include(":fast-prism:migrator")
-// include(":fast-prism:benchmark")
+// FastDowload 后续子模块，当前不启用。
+// include(":fast-dowload:android")
+// include(":fast-dowload:okhttp")
+// include(":fast-dowload:ktx")
+// include(":fast-dowload:rx")
+// include(":fast-dowload:notification")
+// include(":fast-dowload:migrator")
+// include(":fast-dowload:benchmark")
 
 check(JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_17)) {
     """

@@ -25,7 +25,7 @@ class JvmLibraryConventionPlugin : Plugin<Project> {
             pluginManager.apply("java-library")
             pluginManager.apply("org.jetbrains.kotlin.jvm")
 
-            // :fast-prism:core → fast-prism-core，避免多个 SDK 的 core 构件重名。
+            // :fast-dowload:core → fast-dowload-core，避免多个 SDK 的 core 构件重名。
             extensions.configure<BasePluginExtension> {
                 archivesName.set(path.removePrefix(":").replace(':', '-'))
             }

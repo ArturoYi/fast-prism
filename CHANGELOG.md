@@ -2,8 +2,8 @@
 
 ## Unreleased
 
-- 建立 FastPrism 最小闭环：纯 JVM 的 core / engine、MockWebServer 夹具，以及只写入应用内部目录的 sample。
-- FastPrism 作为单个 SDK 放在 `fast-prism/`，core、engine、testing、sample 是它的子模块。
+- 建立 FastDowload 最小闭环：纯 JVM 的 core / engine、MockWebServer 夹具，以及只写入应用内部目录的 sample。
+- FastDowload 作为单个 SDK 放在 `fast-dowload/`，core、engine、testing、sample 是它的子模块。
 - 不提供暂停或停止，不申请存储、通知和前台服务权限。
 
 ## 0.1.0 - 2026-11-09

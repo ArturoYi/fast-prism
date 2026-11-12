@@ -1,15 +1,15 @@
 ---
 seo:
-  title: FastPrism
+  title: FastDowload
   description: Accompanist 风格的 Android Library Monorepo，模块可单独发布到 Maven Central。
 ---
 
 ::u-page-hero
 #title
-FastPrism
+FastDowload
 
 #description
-一个仓库放多个 SDK。FastPrism 在 `fast-prism/` 里，文件只下载到应用内部目录。
+一个仓库放多个 SDK。FastDowload 在 `fast-dowload/` 里，文件只下载到应用内部目录。
 
 #links
   :::u-button

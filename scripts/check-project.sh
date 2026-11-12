@@ -92,16 +92,16 @@ else
   bad "根工程名应该是 fast-prism"
 fi
 
-if grep -q 'include(":fast-prism")' settings.gradle.kts \
-  && grep -q 'plugins {' fast-prism/build.gradle.kts \
-  && grep -q 'base' fast-prism/build.gradle.kts \
-  && ! grep -Eq 'com.android|maven.publish|sdk.jvm.library' fast-prism/build.gradle.kts; then
-  ok ":fast-prism 只聚合子模块，不发布"
+if grep -q 'include(":fast-dowload")' settings.gradle.kts \
+  && grep -q 'plugins {' fast-dowload/build.gradle.kts \
+  && grep -q 'base' fast-dowload/build.gradle.kts \
+  && ! grep -Eq 'com.android|maven.publish|sdk.jvm.library' fast-dowload/build.gradle.kts; then
+  ok ":fast-dowload 只聚合子模块，不发布"
 else
-  bad ":fast-prism 不是 SDK 入口，或误挂了 Android / 发布插件"
+  bad ":fast-dowload 不是 SDK 入口，或误挂了 Android / 发布插件"
 fi
 
-for module in fast-prism:core fast-prism:engine fast-prism:testing fast-prism:sample; do
+for module in fast-dowload:core fast-dowload:engine fast-dowload:testing fast-dowload:sample; do
   if grep -q "include(\":$module\")" settings.gradle.kts; then
     ok "启用 :$module"
   else
@@ -109,10 +109,10 @@ for module in fast-prism:core fast-prism:engine fast-prism:testing fast-prism:sa
   fi
 done
 
-if grep -Eq 'include\(":(fast-prism-core|fast-prism-engine|fast-prism-testing|sample)"\)' settings.gradle.kts; then
+if grep -Eq 'include\(":(fast-dowload-core|fast-dowload-engine|fast-dowload-testing|sample)"\)' settings.gradle.kts; then
   bad "SDK 子模块被平铺在仓库根上"
 else
-  ok "FastPrism 子模块都挂在 :fast-prism 下面"
+  ok "FastDowload 子模块都挂在 :fast-dowload 下面"
 fi
 
 if grep -q 'include(":example")' settings.gradle.kts; then
@@ -130,7 +130,7 @@ else
   bad "JVM convention 不正确"
 fi
 
-for module in fast-prism/core fast-prism/engine fast-prism/testing; do
+for module in fast-dowload/core fast-dowload/engine fast-dowload/testing; do
   if grep -q 'sdk.jvm.library' "$module/build.gradle.kts" \
     && ! grep -q 'com.android' "$module/build.gradle.kts"; then
     ok ":${module//\//:} 是纯 JVM"
@@ -139,13 +139,13 @@ for module in fast-prism/core fast-prism/engine fast-prism/testing; do
   fi
 done
 
-if grep -q '@Disabled("M1 启用")' fast-prism/engine/src/test/kotlin/com/arturoyi/fastprism/engine/FlushOrderTest.kt; then
+if grep -q '@Disabled("M1 启用")' fast-dowload/engine/src/test/kotlin/com/arturoyi/fastdowload/engine/FlushOrderTest.kt; then
   ok "FlushOrderTest 已按 M1 预留"
 else
   bad "缺少 M1 FlushOrderTest 占位"
 fi
 
-manifest="fast-prism/sample/src/main/AndroidManifest.xml"
+manifest="fast-dowload/sample/src/main/AndroidManifest.xml"
 if grep -q 'android.permission.INTERNET' "$manifest" \
   && ! grep -Eq 'READ_EXTERNAL_STORAGE|WRITE_EXTERNAL_STORAGE|MANAGE_EXTERNAL_STORAGE|FOREGROUND_SERVICE|POST_NOTIFICATIONS' "$manifest"; then
   ok "sample 只有网络权限"
@@ -153,17 +153,17 @@ else
   bad "sample 权限不符合内部目录下载"
 fi
 
-if grep -R --include='*.kt' -nE '^import (android|androidx|com\.android)\.' fast-prism/core fast-prism/engine; then
+if grep -R --include='*.kt' -nE '^import (android|androidx|com\.android)\.' fast-dowload/core fast-dowload/engine; then
   bad "core/engine 出现 Android import"
 else
   ok "core/engine 源码没有 Android import"
 fi
 
-if grep -q 'sdk.android.application' fast-prism/sample/build.gradle.kts \
-  && ! grep -Eq 'sdk.android.library.published|com.vanniktech.maven.publish' fast-prism/sample/build.gradle.kts; then
-  ok ":fast-prism:sample 是不发布的 application"
+if grep -q 'sdk.android.application' fast-dowload/sample/build.gradle.kts \
+  && ! grep -Eq 'sdk.android.library.published|com.vanniktech.maven.publish' fast-dowload/sample/build.gradle.kts; then
+  ok ":fast-dowload:sample 是不发布的 application"
 else
-  bad ":fast-prism:sample 不是纯 application，或误挂了发布插件"
+  bad ":fast-dowload:sample 不是纯 application，或误挂了发布插件"
 fi
 
 if grep -q 'publishToMavenCentral' build-logic/convention/src/main/kotlin/sdk/buildlogic/MavenPublish.kt \

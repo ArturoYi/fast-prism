@@ -3,7 +3,7 @@ const siteUrl = process.env.NUXT_SITE_URL || 'http://localhost:3000'
 
 export default defineNuxtConfig({
   site: {
-    name: 'FastPrism',
+    name: 'FastDowload',
     url: siteUrl,
   },
   app: {
