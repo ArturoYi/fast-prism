@@ -39,14 +39,13 @@ jobs:
       - name: 设置 Pages 基路径
         run: |
           set -euo pipefail
-          repo="${{ github.event.repository.name }}"
-          owner="${{ github.repository_owner }}"
+          owner="$(printf '%s' "$GITHUB_REPOSITORY_OWNER" | tr '[:upper:]' '[:lower:]')"
+          repo="$(printf '%s' "${GITHUB_REPOSITORY#*/}" | tr '[:upper:]' '[:lower:]')"
+          echo "NUXT_SITE_URL=https://${owner}.github.io" >> "$GITHUB_ENV"
           if [ "$repo" = "${owner}.github.io" ]; then
             echo "NUXT_APP_BASE_URL=/" >> "$GITHUB_ENV"
-            echo "NUXT_SITE_URL=https://${owner}.github.io" >> "$GITHUB_ENV"
           else
             echo "NUXT_APP_BASE_URL=/${repo}/" >> "$GITHUB_ENV"
-            echo "NUXT_SITE_URL=https://${owner}.github.io/${repo}" >> "$GITHUB_ENV"
           fi
 
       - name: 安装依赖

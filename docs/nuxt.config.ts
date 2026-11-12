@@ -1,3 +1,4 @@
+const baseURL = process.env.NUXT_APP_BASE_URL || '/'
 const siteUrl = process.env.NUXT_SITE_URL || 'http://localhost:3000'
 
 export default defineNuxtConfig({
@@ -6,6 +7,10 @@ export default defineNuxtConfig({
     url: siteUrl,
   },
   app: {
-    baseURL: process.env.NUXT_APP_BASE_URL || '/',
+    baseURL,
+  },
+  // @nuxtjs/robots 不能在带基路径的站点上生成 robots.txt。
+  robots: {
+    robotsTxt: baseURL === '/',
   },
 })
