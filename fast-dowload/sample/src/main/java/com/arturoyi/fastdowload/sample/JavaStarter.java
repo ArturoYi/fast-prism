@@ -1,7 +1,7 @@
 package com.arturoyi.fastdowload.sample;
 
 import com.arturoyi.fastdowload.api.DownloadRequestBuilder;
-import com.arturoyi.fastdowload.api.Downloader;
+import com.arturoyi.fastdowload.api.FastDownloader;
 import com.arturoyi.fastdowload.core.model.DownloadRequest;
 import com.arturoyi.fastdowload.core.model.Priority;
 
@@ -19,7 +19,7 @@ public final class JavaStarter {
      * @param url 资源地址。
      * @return 任务标识。
      */
-    public static String enqueue(Downloader downloader, String url) {
+    public static String enqueue(FastDownloader downloader, String url) {
         DownloadRequest request = new DownloadRequestBuilder(url)
                 .saveTo("downloads", "from-java.bin")
                 .priority(Priority.NORMAL)

@@ -50,7 +50,7 @@ import java.util.concurrent.atomic.AtomicReference
  *
  * 回调都在主线程。`enqueue` 在命令线程算出标识后返回，不把查库留在界面线程。
  */
-public class Downloader private constructor(
+public class FastDownloader private constructor(
     private val appContext: Context,
     private val namespace: String,
     private val repository: BreakpointStore,
@@ -236,7 +236,7 @@ public class Downloader private constructor(
 
     public companion object {
         private const val TAG: String = "FastDowload"
-        private val instances = ConcurrentHashMap<String, Downloader>()
+        private val instances = ConcurrentHashMap<String, FastDownloader>()
 
         /**
          * 用默认配置初始化名为 `default` 的下载器。
@@ -282,7 +282,7 @@ public class Downloader private constructor(
          * @throws IllegalStateException 还没有初始化。
          */
         @JvmStatic
-        public fun getDefault(): Downloader = get(Defaults.GROUP)
+        public fun getDefault(): FastDownloader = get(Defaults.GROUP)
 
         /**
          * 按命名空间取下载器。
@@ -292,8 +292,8 @@ public class Downloader private constructor(
          * @throws IllegalStateException 这个名字还没有初始化。
          */
         @JvmStatic
-        public fun get(namespace: String): Downloader {
-            return instances[namespace] ?: throw IllegalStateException("先调用 Downloader.init")
+        public fun get(namespace: String): FastDownloader {
+            return instances[namespace] ?: throw IllegalStateException("先调用 FastDownloader.init")
         }
 
         /**
@@ -306,7 +306,7 @@ public class Downloader private constructor(
          * @return 新的下载器。
          */
         @JvmStatic
-        public fun create(config: DownloaderConfig): Downloader {
+        public fun create(config: DownloaderConfig): FastDownloader {
             val repository = config.repository ?: RoomDownloadRepository(
                 config.context,
                 databaseName(config.namespace),
@@ -373,7 +373,7 @@ public class Downloader private constructor(
                 background.onActiveCount(active)
             }
             dispatcher.wake()
-            return Downloader(
+            return FastDownloader(
                 appContext = config.context.applicationContext,
                 namespace = config.namespace,
                 repository = repository,

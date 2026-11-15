@@ -7,7 +7,7 @@ package com.arturoyi.fastdowload.sample
 
 import android.app.Application
 import com.arturoyi.fastdowload.android.background.BackgroundMode
-import com.arturoyi.fastdowload.api.Downloader
+import com.arturoyi.fastdowload.api.FastDownloader
 
 /**
  * 零配置初始化。没有单独注册 HTTP 客户端时，使用内置连接。
@@ -18,7 +18,7 @@ class SampleApp : Application() {
      */
     override fun onCreate() {
         super.onCreate()
-        Downloader.init(this) {
+        FastDownloader.init(this) {
             backgroundMode(BackgroundMode.FOREGROUND_SERVICE)
         }
     }

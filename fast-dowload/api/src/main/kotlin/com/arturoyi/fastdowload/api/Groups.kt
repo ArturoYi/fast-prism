@@ -12,7 +12,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
- * [Downloader.groups] 上的分组操作。
+ * [FastDownloader.groups] 上的分组操作。
  *
  * @param dispatcher 串行命令队列。
  * @param repository 用来按分组读取任务。

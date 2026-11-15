@@ -6,7 +6,7 @@
 package com.arturoyi.fastdowload.ktx
 
 import com.arturoyi.fastdowload.api.DownloadRequestBuilder
-import com.arturoyi.fastdowload.api.Downloader
+import com.arturoyi.fastdowload.api.FastDownloader
 import com.arturoyi.fastdowload.api.DownloaderConfig
 import com.arturoyi.fastdowload.engine.store.InMemoryBreakpointStore
 import kotlinx.coroutines.delay
@@ -30,7 +30,7 @@ class AwaitTest {
      */
     @Test
     fun awaitSuspendsInsteadOfBlockingTheCaller() = runBlocking {
-        val downloader = Downloader.create(
+        val downloader = FastDownloader.create(
             DownloaderConfig.Builder(RuntimeEnvironment.getApplication())
                 .namespace("await")
                 .repository(InMemoryBreakpointStore())

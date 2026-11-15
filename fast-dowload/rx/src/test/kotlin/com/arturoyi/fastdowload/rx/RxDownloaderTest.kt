@@ -6,7 +6,7 @@
 package com.arturoyi.fastdowload.rx
 
 import com.arturoyi.fastdowload.api.DownloadRequestBuilder
-import com.arturoyi.fastdowload.api.Downloader
+import com.arturoyi.fastdowload.api.FastDownloader
 import com.arturoyi.fastdowload.api.DownloaderConfig
 import com.arturoyi.fastdowload.engine.store.InMemoryBreakpointStore
 import org.junit.Test
@@ -26,7 +26,7 @@ class RxDownloaderTest {
      */
     @Test
     fun awaitSingleStaysOpenUntilDisposed() {
-        val downloader = Downloader.create(
+        val downloader = FastDownloader.create(
             DownloaderConfig.Builder(RuntimeEnvironment.getApplication())
                 .namespace("rx")
                 .repository(InMemoryBreakpointStore())

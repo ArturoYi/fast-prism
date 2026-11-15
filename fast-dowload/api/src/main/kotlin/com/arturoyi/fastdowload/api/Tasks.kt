@@ -9,7 +9,7 @@ import com.arturoyi.fastdowload.core.model.DownloadRequest
 import com.arturoyi.fastdowload.engine.dispatch.CommandDispatcher
 
 /**
- * [Downloader.tasks] 上的写操作。
+ * [FastDownloader.tasks] 上的写操作。
  *
  * 除 [enqueue] 和 [enqueueAll] 会等到标识算出以外，其他方法把命令放进队列后立即返回。
  *

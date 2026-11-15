@@ -13,7 +13,7 @@
 - 诊断日志带阶段名和错误码。`dumpState()` 不输出完整地址。
 - 基准门禁：2MiB 在 1/2/4/8 分片下，偏移写回次数相对分片数偏差不超过 10%。100MiB 用 `-Dbenchmark.profile=full` 另跑。1GiB 样本不放进每次提交，避免在内存里放下整份正文。
 
-- FastDowload 0.1.0 对外门面：`Downloader.tasks` / `groups` / `query`，主线程回调，Kotlin DSL 与 Java Builder。
+- FastDowload 0.1.0 对外门面：`FastDownloader.tasks` / `groups` / `query`，主线程回调，Kotlin DSL 与 Java Builder。
 - 重复入队按 `EnqueueAction` 处理。`INCREMENT_FILE_NAME` 会换成 `名字 (1).扩展名`，不覆盖已有文件。
 - 未注册 HTTP 客户端时使用 `HttpURLConnection`，并写一条警告。OkHttp 要显式传入 `OkHttpHttpClient`。
 - `public_id`、`ErrorCode.code`、`Status.value` 从这一版起不再改值、也不把旧值挪给别的常量。

@@ -34,7 +34,7 @@ public fun interface ResultCallback<T> {
 }
 
 /**
- * [Downloader.query] 上的读操作。
+ * [FastDownloader.query] 上的读操作。
  *
  * @param repository 任务仓库。
  * @param httpClient 用来做 `HEAD`。

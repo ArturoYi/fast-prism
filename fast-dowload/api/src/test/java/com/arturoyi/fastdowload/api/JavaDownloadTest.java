@@ -32,7 +32,7 @@ public class JavaDownloadTest {
                 .repository(store)
                 .autoStart(false)
                 .build();
-        Downloader downloader = Downloader.create(config);
+        FastDownloader downloader = FastDownloader.create(config);
         try {
             DownloadRequest request = new DownloadRequestBuilder("https://example.com/a.bin")
                     .saveTo("downloads", "a.bin")

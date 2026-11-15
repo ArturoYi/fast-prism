@@ -8,7 +8,7 @@
 package com.arturoyi.fastdowload.ktx
 
 import com.arturoyi.fastdowload.api.DownloadListener
-import com.arturoyi.fastdowload.api.Downloader
+import com.arturoyi.fastdowload.api.FastDownloader
 import com.arturoyi.fastdowload.api.SnapshotListener
 import com.arturoyi.fastdowload.core.error.DownloadError
 import com.arturoyi.fastdowload.core.error.ErrorCode
@@ -34,7 +34,7 @@ import kotlin.coroutines.resume
  * @param downloader 负责入队的下载器。
  * @return 成功或失败。取消和删除也算失败，错误码是 [ErrorCode.CANCELED]。
  */
-public suspend fun DownloadRequest.await(downloader: Downloader): DownloadResult {
+public suspend fun DownloadRequest.await(downloader: FastDownloader): DownloadResult {
     val id = downloader.tasks.enqueue(this)
     return suspendCancellableCoroutine { continuation ->
         val once = AtomicBoolean(false)
@@ -77,7 +77,7 @@ public suspend fun DownloadRequest.await(downloader: Downloader): DownloadResult
  * @param id 任务标识。
  * @return 每次跨过节流阈值后的进度。
  */
-public fun Downloader.progressFlow(id: String): Flow<Progress> = callbackFlow {
+public fun FastDownloader.progressFlow(id: String): Flow<Progress> = callbackFlow {
     val listener = object : DownloadListener {
         override fun onProgress(record: DownloadRecord, progress: Progress) {
             if (record.id == id) trySend(progress)
@@ -94,7 +94,7 @@ public fun Downloader.progressFlow(id: String): Flow<Progress> = callbackFlow {
  *
  * @return 冷流。每个收集者有自己的监听器。
  */
-public fun Downloader.events(): Flow<DownloadEvent> = callbackFlow {
+public fun FastDownloader.events(): Flow<DownloadEvent> = callbackFlow {
     val listener = object : DownloadListener {
         override fun onStarted(record: DownloadRecord, blocks: List<DownloadBlock>) {
             trySend(DownloadEvent.Started(record.id))
@@ -124,7 +124,7 @@ public fun Downloader.events(): Flow<DownloadEvent> = callbackFlow {
  * @param groupId 分组名。
  * @return 每次任务列表变化时的合计进度。
  */
-public fun Downloader.groupProgress(groupId: String): Flow<Progress> = callbackFlow {
+public fun FastDownloader.groupProgress(groupId: String): Flow<Progress> = callbackFlow {
     val listener = SnapshotListener { records ->
         val group = records.filter { record -> record.request.groupId == groupId }
         val downloaded = group.sumOf { record -> record.downloadedBytes }

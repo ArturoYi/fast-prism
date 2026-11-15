@@ -13,7 +13,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
-import com.arturoyi.fastdowload.api.Downloader
+import com.arturoyi.fastdowload.api.FastDownloader
 import com.arturoyi.fastdowload.api.SimpleDownloadListener
 import com.arturoyi.fastdowload.api.SnapshotListener
 import com.arturoyi.fastdowload.api.downloadRequest
@@ -55,7 +55,7 @@ class MainActivity : AppCompatActivity() {
      */
     override fun onStart() {
         super.onStart()
-        val downloader = Downloader.getDefault()
+        val downloader = FastDownloader.getDefault()
         val snapshotListener = SnapshotListener { latest ->
             records = latest
             render()
@@ -76,7 +76,7 @@ class MainActivity : AppCompatActivity() {
      * 页面不可见时摘掉监听，避免同一次页面生命周期里重复登记。
      */
     override fun onStop() {
-        val downloader = Downloader.getDefault()
+        val downloader = FastDownloader.getDefault()
         snapshots?.let(downloader::removeSnapshotListener)
         progressListener?.let(downloader::removeListener)
         snapshots = null
@@ -88,7 +88,7 @@ class MainActivity : AppCompatActivity() {
      * 把示例地址放进队列。
      */
     private fun enqueue() {
-        val id = Downloader.getDefault().tasks.enqueue(
+        val id = FastDownloader.getDefault().tasks.enqueue(
             downloadRequest(getString(R.string.demo_url)) {
                 saveTo("downloads", "fast-dowload-10m.bin")
             },

@@ -2,7 +2,7 @@
 
 单仓库可以放多个 SDK。每个 SDK 占仓库根目录下的一个目录，它自己的实现、测试夹具和 Demo 放在这个目录里面。
 
-当前的 SDK 是 FastDowload：把文件下到应用内部目录。对外入口是 `Downloader`，任务、分组、查询和配置分开放。回调在主线程。样本应用只声明 `INTERNET`。
+当前的 SDK 是 FastDowload：把文件下到应用内部目录。对外入口是 `FastDownloader`，任务、分组、查询和配置分开放。回调在主线程。样本应用只声明 `INTERNET`。
 
 ## FastDowload
 
@@ -12,7 +12,7 @@
 | `:fast-dowload:core` | 纯 JVM | 请求、分块、状态、错误码、HTTP 与写出目标契约 |
 | `:fast-dowload:engine` | 纯 JVM | 下载、命令队列、断点。默认 HTTP 客户端是 `HttpURLConnection` |
 | `:fast-dowload:android` | Android 库 | Room、网络状态、内容 Uri 写入 |
-| `:fast-dowload:api` | Android 库 | `Downloader` 门面、主线程回调、Kotlin DSL 与 Java Builder |
+| `:fast-dowload:api` | Android 库 | `FastDownloader` 门面、主线程回调、Kotlin DSL 与 Java Builder |
 | `:fast-dowload:okhttp` | 纯 JVM | 显式注册的 OkHttp 客户端 |
 | `:fast-dowload:ktx` | Android 库 | `await`、进度 Flow |
 | `:fast-dowload:testing` | 纯 JVM，不发布 | MockWebServer 夹具 |

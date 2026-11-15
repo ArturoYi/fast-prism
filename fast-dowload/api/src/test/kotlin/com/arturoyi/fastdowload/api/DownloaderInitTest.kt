@@ -20,7 +20,7 @@ import org.robolectric.annotation.Config
 import java.util.concurrent.atomic.AtomicReference
 
 /**
- * [Downloader.create] 在主线程调用时仍然完成启动清洗。
+ * [FastDownloader.create] 在主线程调用时仍然完成启动清洗。
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
@@ -43,7 +43,7 @@ class DownloaderInitTest {
             repository.upsert(opened.copy(status = Status.DOWNLOADING))
             opened.id
         }
-        val downloader = Downloader.create(
+        val downloader = FastDownloader.create(
             DownloaderConfig.Builder(context)
                 .namespace("main-thread-init")
                 .repository(repository)

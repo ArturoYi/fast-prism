@@ -1,5 +1,5 @@
 /**
- * 创建 [Downloader] 时的配置。
+ * 创建 [FastDownloader] 时的配置。
  *
  * Java 使用 [Builder]。Kotlin 也可以对 [Builder] 调用 `apply`。
  *
