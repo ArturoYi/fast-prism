@@ -41,6 +41,7 @@ internal class BlockWriter(
     internal fun pump(
         body: InputStream,
         remaining: Long?,
+        onRead: (Int) -> Unit = {},
         onChunk: (bytes: ByteArray, off: Int, len: Int) -> Unit,
     ): Long {
         val buffer = ByteArray(bufferSize)
@@ -57,6 +58,7 @@ internal class BlockWriter(
             }
             val read = body.read(buffer, 0, want)
             if (read < 0) break
+            onRead(read)
             pending.write(buffer, 0, read)
             readTotal += read
             val elapsedMs = (System.nanoTime() - since) / 1_000_000L

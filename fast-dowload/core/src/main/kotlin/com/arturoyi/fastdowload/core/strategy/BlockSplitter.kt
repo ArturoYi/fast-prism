@@ -35,11 +35,7 @@ public object BlockSplitter {
             totalBytes < HUNDRED_MIB -> 4
             else -> Defaults.MAX_BLOCKS_PER_TASK
         }
-        val chosen = if (hint != null) {
-            hint.coerceIn(1, Defaults.MAX_BLOCKS_CAP)
-        } else {
-            adaptive.coerceAtMost(Defaults.MAX_BLOCKS_PER_TASK)
-        }
+        val chosen = hint?.coerceIn(1, Defaults.MAX_BLOCKS_CAP) ?: adaptive.coerceAtMost(Defaults.MAX_BLOCKS_PER_TASK)
         return chosen.toLong().coerceAtMost(totalBytes).toInt()
     }
 

@@ -6,7 +6,7 @@
 package com.arturoyi.fastdowload.engine.io
 
 import com.arturoyi.fastdowload.core.model.Defaults
-import com.arturoyi.fastdowload.engine.store.InMemoryBreakpointStore
+import com.arturoyi.fastdowload.core.spi.DownloadRepository
 import com.arturoyi.fastdowload.engine.store.OffsetCommit
 import com.arturoyi.fastdowload.engine.store.RemitSyncExecutor
 
@@ -68,7 +68,7 @@ public class FlushOrderGuard(
          * @return 尚未启动写入的合并器。使用完要关闭。
          */
         public fun openRemit(
-            store: InMemoryBreakpointStore,
+            store: DownloadRepository,
             delayMs: Long = Defaults.REMIT_DELAY_MS,
         ): RemitSyncExecutor {
             return RemitSyncExecutor(delayMs, OffsetCommit { id, index, delta ->

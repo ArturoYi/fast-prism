@@ -1,5 +1,5 @@
 // FastDowload 这个 SDK。实现在子模块里，这里只把验证收成 :fast-dowload:check。
-// 这一阶段没有对外门面，也不发布。
+// 对外入口是 :fast-dowload:api。这一阶段还不发布。
 plugins {
     base
 }
@@ -10,5 +10,14 @@ tasks.named("check") {
         ":fast-dowload:engine:check",
         ":fast-dowload:testing:check",
         ":fast-dowload:sample:check",
+        ":fast-dowload:android:check",
+        ":fast-dowload:api:check",
+        ":fast-dowload:okhttp:check",
+        ":fast-dowload:ktx:check",
+        ":fast-dowload:benchmark:check",
+        ":fast-dowload:cronet:check",
+        ":fast-dowload:rx:check",
+        ":fast-dowload:matrix:check",
+        ":fast-dowload:bom:check",
     )
 }

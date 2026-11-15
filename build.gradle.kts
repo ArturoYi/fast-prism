@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.sdk.android.lint) apply false
     alias(libs.plugins.sdk.bom) apply false
     alias(libs.plugins.sdk.jvm.library) apply false
+    alias(libs.plugins.ksp) apply false
 }
 
 // 发布配置在 build-logic convention 中。这里只聚合验证任务，不注入 maven-publish。

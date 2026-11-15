@@ -13,6 +13,7 @@ import com.arturoyi.fastdowload.core.model.ContentFingerprint
 import com.arturoyi.fastdowload.core.model.Defaults
 import com.arturoyi.fastdowload.core.model.HttpRequest
 import com.arturoyi.fastdowload.core.model.HttpResponse
+import com.arturoyi.fastdowload.core.spi.HttpClient
 import com.arturoyi.fastdowload.engine.http.OkHttpDownloadClient
 import java.io.IOException
 import java.util.Locale
@@ -30,7 +31,7 @@ import java.util.logging.Logger
  * @param client 执行 GET 和 HEAD 的客户端。
  */
 public class ConnectTrial(
-    private val client: OkHttpDownloadClient = OkHttpDownloadClient(),
+    private val client: HttpClient = OkHttpDownloadClient(),
 ) {
     /**
      * 最近一次 [execute] 里试连响应的 `Content-Disposition`。

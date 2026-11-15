@@ -8,6 +8,8 @@ package com.arturoyi.fastdowload.engine.file
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
+import java.io.File
+import java.nio.file.Files
 
 /**
  * [ensureSpace] 把需要的字节和可用字节写进异常。
@@ -23,5 +25,20 @@ class FileSpaceTest {
         }
         assertEquals(100L, error.requiredBytes)
         assertEquals(10L, error.freeBytes)
+    }
+
+    /**
+     * 父目录有足够空间时，临时文件被扩展到指定长度。
+     */
+    @Test
+    fun preallocateExtendsFileToRequestedLength() {
+        val root = Files.createTempDirectory("fastdowload-space").toFile()
+        try {
+            val file = File(root, "a.bin")
+            DefaultFilePolicy().preallocate(file, 32)
+            assertEquals(32L, file.length())
+        } finally {
+            root.deleteRecursively()
+        }
     }
 }

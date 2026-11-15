@@ -198,19 +198,44 @@ class RetryPolicyTest {
         assertEquals(4_000L, policy.delayFor(3, random))
         assertEquals(30_000L, policy.delayFor(20, random))
     }
+
+    /**
+     * 抖动把等待限制在基础值的上下 20% 以内，并且更后面的一次仍然更长。
+     */
+    @Test
+    fun jitterStaysWithinTwentyPercentAndStillGrows() {
+        val policy = RetryPolicy()
+        val low = policy.delayFor(1, FixedRandom(0.0))
+        val high = policy.delayFor(1, FixedRandom(1.0))
+        assertEquals(800L, low)
+        assertEquals(1_200L, high)
+        val later = policy.delayFor(2, FixedRandom(0.0))
+        assertTrue(later > high)
+    }
 }
 
 /**
- * [Status] 保持约定的七个名字，不包含暂停或取消。
+ * [Status] 使用最终的十个名字。
  */
 class StatusTest {
     /**
      * 枚举声明顺序就是对外名称顺序。
      */
     @Test
-    fun subsetKeepsFinalNamesAndOmitsStopStates() {
+    fun namesMatchTheTaskLifecycle() {
         assertEquals(
-            listOf("ADDED", "QUEUED", "DOWNLOADING", "COMPLETED", "FAILED", "REMOVED", "DELETED"),
+            listOf(
+                "ADDED",
+                "QUEUED",
+                "WAITING_NETWORK",
+                "DOWNLOADING",
+                "PAUSED",
+                "COMPLETED",
+                "FAILED",
+                "CANCELLED",
+                "REMOVED",
+                "DELETED",
+            ),
             Status.entries.map { it.name },
         )
     }

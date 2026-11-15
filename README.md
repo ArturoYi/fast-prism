@@ -2,31 +2,34 @@
 
 单仓库可以放多个 SDK。每个 SDK 占仓库根目录下的一个目录，它自己的实现、测试夹具和 Demo 放在这个目录里面。
 
-当前的 SDK 是 FastDowload：只把文件下到应用内部目录。最小闭环是一个 URL、一条连接，写入 `filesDir` 下的相对路径，并持续回调进度。没有暂停、取消或停止。进程结束，下载就结束。样本应用只声明 `INTERNET`。
+当前的 SDK 是 FastDowload：把文件下到应用内部目录。对外入口是 `Downloader`，任务、分组、查询和配置分开放。回调在主线程。样本应用只声明 `INTERNET`。
 
 ## FastDowload
 
 | 模块 | 类型 | 现在做什么 |
 | --- | --- | --- |
 | `:fast-dowload` | 聚合，不发布 | SDK 入口。`:fast-dowload:check` 跑它下面的子模块 |
-| `:fast-dowload:core` | 纯 JVM | 请求、分块、状态、错误码。不依赖 Android |
-| `:fast-dowload:engine` | 纯 JVM | 单连接下载、`HttpURLConnection`、落盘后 `sync` |
+| `:fast-dowload:core` | 纯 JVM | 请求、分块、状态、错误码、HTTP 与写出目标契约 |
+| `:fast-dowload:engine` | 纯 JVM | 下载、命令队列、断点。默认 HTTP 客户端是 `HttpURLConnection` |
+| `:fast-dowload:android` | Android 库 | Room、网络状态、内容 Uri 写入 |
+| `:fast-dowload:api` | Android 库 | `Downloader` 门面、主线程回调、Kotlin DSL 与 Java Builder |
+| `:fast-dowload:okhttp` | 纯 JVM | 显式注册的 OkHttp 客户端 |
+| `:fast-dowload:ktx` | Android 库 | `await`、进度 Flow |
 | `:fast-dowload:testing` | 纯 JVM，不发布 | MockWebServer 夹具 |
-| `:fast-dowload:sample` | Application，不发布 | 一个按钮和进度条 |
+| `:fast-dowload:sample` | Application，不发布 | 一个按钮、进度条和已保存任务列表 |
 
-以后的 `android`、`okhttp`、`ktx` 也放在 `fast-dowload/` 下面。另一个 SDK 另开根目录，例如 `pager/`，不要再把 `fast-dowload-core` 这类名字铺到仓库根上。
+另一个 SDK 另开根目录，例如 `pager/`，不要再把 `fast-dowload-core` 这类名字铺到仓库根上。
 
 ## 非目标
 
-- 不提供暂停、取消、停止
-- 不把文件写到外部存储或 `content://`
 - 不保活，不承诺进程被杀掉之后继续下
-- 不做多进程、Room、分块并行、对外稳定 API
+- 不做多进程
+- 默认任务仍写入应用内部相对路径
 
 ## 命令
 
 ```bash
-./gradlew :fast-dowload:core:test :fast-dowload:engine:test
+./gradlew :fast-dowload:core:test :fast-dowload:engine:test :fast-dowload:api:testDebugUnitTest
 ./gradlew :fast-dowload:sample:assembleDebug
 ./gradlew ciCheck
 ```

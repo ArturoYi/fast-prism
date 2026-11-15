@@ -68,10 +68,17 @@ public object Defaults {
     public const val DOWNLOAD_ON_ENQUEUE: Boolean = true
 
     /** 未由调用方覆盖时发送的 `User-Agent`。 */
-    public const val USER_AGENT: String = "FastDowload/0.1.0"
+    public const val USER_AGENT: String = "FastDowload/1.0.0-rc"
 
     /** 进度通知的默认最小间隔。 */
     public val PROGRESS_INTERVAL: Duration = 300.milliseconds
+
+    /**
+     * 进度通知的默认最小字节间隔。
+     *
+     * 距上次通知已写入的字节达到这个数时也会通知，不必再等 [PROGRESS_INTERVAL]。
+     */
+    public const val PROGRESS_MIN_BYTES: Long = 65_536L
 
     /** 第 1 次重试前的默认基础等待。 */
     public val RETRY_INITIAL_DELAY: Duration = 1.seconds

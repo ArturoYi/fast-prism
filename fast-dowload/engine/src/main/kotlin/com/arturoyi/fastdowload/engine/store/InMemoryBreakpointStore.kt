@@ -1,7 +1,7 @@
 /**
  * 进程内的断点记录。
  *
- * 方法名按以后的仓库形状命名。当前只有这一份内存实现，所以还不抽接口。
+ * 方法遵循 [com.arturoyi.fastdowload.core.spi.DownloadRepository]。Room 是另一份实现。
  *
  * @file
  */
@@ -14,8 +14,15 @@ import com.arturoyi.fastdowload.core.model.DownloadBlock
 import com.arturoyi.fastdowload.core.model.DownloadRecord
 import com.arturoyi.fastdowload.core.model.DownloadRequest
 import com.arturoyi.fastdowload.core.model.PublicIds
+import com.arturoyi.fastdowload.core.model.downloadPartFile
+import com.arturoyi.fastdowload.core.model.inScheduleOrder
+import com.arturoyi.fastdowload.core.spi.DownloadFilter
+import com.arturoyi.fastdowload.core.state.SanitizePolicy
+import com.arturoyi.fastdowload.core.state.SanitizeReport
+import com.arturoyi.fastdowload.core.state.StateMachine
 import com.arturoyi.fastdowload.core.state.Status
 import com.arturoyi.fastdowload.engine.trial.TrialBaseline
+import java.io.File
 
 /**
  * 用内存保存任务、分块、指纹和脏标记。
@@ -23,12 +30,13 @@ import com.arturoyi.fastdowload.engine.trial.TrialBaseline
  * 进程结束后内容消失。调用方要模拟崩溃时，先取出快照再放进一个新实例。
  * 偏移只应在文件同步成功之后增加。
  */
-public class InMemoryBreakpointStore {
+public class InMemoryBreakpointStore : BreakpointStore {
     private val monitor = Any()
     private val records = HashMap<String, DownloadRecord>()
     private val blocks = HashMap<String, List<DownloadBlock>>()
     private val fingerprints = HashMap<String, ContentFingerprint>()
     private val dirty = HashSet<String>()
+    private var flushObserver: (() -> Unit)? = null
 
     /**
      * 取出已有任务，没有则按 [request] 新建一条排队记录。
@@ -38,7 +46,7 @@ public class InMemoryBreakpointStore {
      * @param request 下载请求。
      * @return 已有或新建的记录。
      */
-    public fun open(request: DownloadRequest): DownloadRecord {
+    public override fun open(request: DownloadRequest): DownloadRecord {
         val id = PublicIds.generate(request.url, request.destination, request.groupId)
         return synchronized(monitor) {
             records[id] ?: DownloadRecord(
@@ -57,7 +65,7 @@ public class InMemoryBreakpointStore {
      * @param publicId 任务标识。
      * @return 没有这条任务时为 null。
      */
-    public fun get(publicId: String): DownloadRecord? = synchronized(monitor) { records[publicId] }
+    public override fun get(publicId: String): DownloadRecord? = synchronized(monitor) { records[publicId] }
 
     /**
      * 读取分块的副本。
@@ -65,7 +73,7 @@ public class InMemoryBreakpointStore {
      * @param publicId 任务标识。
      * @return 按当前保存顺序排列的分块。没有分块时为空列表。
      */
-    public fun blocksOf(publicId: String): List<DownloadBlock> {
+    public override fun blocksOf(publicId: String): List<DownloadBlock> {
         return synchronized(monitor) { blocks[publicId].orEmpty().toList() }
     }
 
@@ -75,7 +83,7 @@ public class InMemoryBreakpointStore {
      * @param publicId 任务标识。
      * @return 没有分块时为 0。
      */
-    public fun downloaded(publicId: String): Long {
+    public override fun downloaded(publicId: String): Long {
         return synchronized(monitor) { blocks[publicId].orEmpty().sumOf { it.currentOffset } }
     }
 
@@ -85,7 +93,7 @@ public class InMemoryBreakpointStore {
      * @param publicId 任务标识。
      * @return 没有记录时，已写字节为 0、总长度未知。
      */
-    public fun baseline(publicId: String): TrialBaseline {
+    public override fun baseline(publicId: String): TrialBaseline {
         return synchronized(monitor) {
             val fingerprint = fingerprints[publicId]
             TrialBaseline(
@@ -105,7 +113,7 @@ public class InMemoryBreakpointStore {
      * @param publicId 任务标识。任务必须已经 [open]。
      * @param fingerprint 本次试连的指纹。
      */
-    public fun saveFingerprint(publicId: String, fingerprint: ContentFingerprint) {
+    public override fun saveFingerprint(publicId: String, fingerprint: ContentFingerprint) {
         synchronized(monitor) {
             val record = records.getValue(publicId)
             fingerprints[publicId] = fingerprint
@@ -118,16 +126,16 @@ public class InMemoryBreakpointStore {
      * 替换全部分块，并用它们的已写字节更新任务进度。
      *
      * @param publicId 任务标识。
-     * @param next 新的分块。每一块的记录标识必须是 [publicId]。
+     * @param blocks 新的分块。每一块的记录标识必须是 [publicId]。
      * @throws IllegalArgumentException 分块不属于这条任务，或任务不存在。
      */
-    public fun replaceBlocks(publicId: String, next: List<DownloadBlock>) {
-        require(next.all { it.recordId == publicId }) { "分块不属于该任务" }
+    public override fun replaceBlocks(publicId: String, blocks: List<DownloadBlock>) {
+        require(blocks.all { it.recordId == publicId }) { "分块不属于该任务" }
         synchronized(monitor) {
             val record = records.getValue(publicId)
-            blocks[publicId] = next.sortedBy { it.index }
+            this.blocks[publicId] = blocks.sortedBy { it.index }
             records[publicId] = record.copy(
-                downloadedBytes = next.sumOf { it.currentOffset },
+                downloadedBytes = blocks.sumOf { it.currentOffset },
                 updatedAt = touched(record),
             )
         }
@@ -144,7 +152,7 @@ public class InMemoryBreakpointStore {
      * @throws IllegalArgumentException [delta] 不是正数，或增加后超出该分块长度。
      * @throws IllegalStateException 任务或分块不存在。
      */
-    public fun onFlushSuccess(publicId: String, blockIndex: Int, delta: Long) {
+    public override fun onFlushSuccess(publicId: String, blockIndex: Int, delta: Long) {
         require(delta > 0L) { "delta 必须大于 0" }
         synchronized(monitor) {
             val current = blocks[publicId] ?: error("没有分块")
@@ -157,10 +165,19 @@ public class InMemoryBreakpointStore {
             val record = records.getValue(publicId)
             records[publicId] = record.copy(
                 downloadedBytes = next.sumOf { it.currentOffset },
-                status = Status.DOWNLOADING,
                 updatedAt = touched(record),
             )
         }
+        flushObserver?.invoke()
+    }
+
+    /**
+     * 偏移提交成功后通知 [observer]。
+     *
+     * @param observer 新的回调。null 表示取消。
+     */
+    public override fun setFlushObserver(observer: (() -> Unit)?) {
+        flushObserver = observer
     }
 
     /**
@@ -170,7 +187,7 @@ public class InMemoryBreakpointStore {
      *
      * @param publicId 任务标识。
      */
-    public fun clearBlocks(publicId: String) {
+    public override fun clearBlocks(publicId: String) {
         synchronized(monitor) {
             blocks[publicId] = emptyList()
             fingerprints.remove(publicId)
@@ -189,7 +206,7 @@ public class InMemoryBreakpointStore {
      *
      * @param publicId 任务标识。
      */
-    public fun markDirty(publicId: String) {
+    public override fun markDirty(publicId: String) {
         synchronized(monitor) { dirty.add(publicId) }
     }
 
@@ -198,7 +215,7 @@ public class InMemoryBreakpointStore {
      *
      * @param publicId 任务标识。
      */
-    public fun clearDirty(publicId: String) {
+    public override fun clearDirty(publicId: String) {
         synchronized(monitor) { dirty.remove(publicId) }
     }
 
@@ -208,14 +225,14 @@ public class InMemoryBreakpointStore {
      * @param publicId 任务标识。
      * @return 需要从头再写时为 true。
      */
-    public fun isDirty(publicId: String): Boolean = synchronized(monitor) { publicId in dirty }
+    public override fun isDirty(publicId: String): Boolean = synchronized(monitor) { publicId in dirty }
 
     /**
      * 把状态改成正在下载。
      *
      * @param publicId 任务标识。
      */
-    public fun markDownloading(publicId: String) {
+    public override fun markDownloading(publicId: String) {
         update(publicId) { it.copy(status = Status.DOWNLOADING, error = null) }
     }
 
@@ -224,7 +241,7 @@ public class InMemoryBreakpointStore {
      *
      * @param publicId 任务标识。
      */
-    public fun markCompleted(publicId: String) {
+    public override fun markCompleted(publicId: String) {
         update(publicId) { it.copy(status = Status.COMPLETED, error = null) }
     }
 
@@ -234,7 +251,7 @@ public class InMemoryBreakpointStore {
      * @param publicId 任务标识。
      * @param error 这次失败。
      */
-    public fun markFailed(publicId: String, error: DownloadError) {
+    public override fun markFailed(publicId: String, error: DownloadError) {
         update(publicId) { it.copy(status = Status.FAILED, error = error) }
     }
 
@@ -265,6 +282,105 @@ public class InMemoryBreakpointStore {
     public fun destination(publicId: String): Destination? {
         return synchronized(monitor) { records[publicId]?.request?.destination }
     }
+
+    /**
+     * 插入或整体替换任务，不走状态白名单。
+     *
+     * @param record 要保存的任务。
+     */
+    public override fun upsert(record: DownloadRecord) {
+        synchronized(monitor) {
+            records[record.id] = record
+        }
+    }
+
+    /**
+     * 列出任务并排序。
+     *
+     * @param filter 状态筛选。
+     * @return 优先级高的在前，同优先级创建更早的在前。
+     */
+    public override fun query(filter: DownloadFilter): List<DownloadRecord> {
+        return synchronized(monitor) {
+            records.values
+                .filter { record -> filter.statuses.isEmpty() || record.status in filter.statuses }
+                .toList()
+                .inScheduleOrder()
+        }
+    }
+
+    /**
+     * 按白名单修改状态。
+     *
+     * @param publicId 任务标识。
+     * @param to 目标状态。
+     * @param error 失败时附带的错误。离开失败状态时清掉错误。
+     * @return 更新后的任务。
+     */
+    public override fun transition(publicId: String, to: Status, error: DownloadError?): DownloadRecord {
+        return synchronized(monitor) {
+            val record = records.getValue(publicId)
+            StateMachine.requireTransition(record.status, to)
+            val nextError = if (to == Status.FAILED) error else null
+            val updated = record.copy(status = to, error = nextError, updatedAt = touched(record))
+            records[publicId] = updated
+            updated
+        }
+    }
+
+    /**
+     * 按文件和脏标记修正全部任务。
+     *
+     * @param storageRoot 内部存储根目录。
+     * @return 改动计数。
+     */
+    public override fun sanitizeOnStartup(storageRoot: File): SanitizeReport {
+        return transaction {
+            var requeued = 0
+            var cleared = 0
+            var zeroed = 0
+            records.values.toList().forEach { record ->
+                val part = downloadPartFile(storageRoot, record.request.destination, record.id)
+                val target = record.request.destination.resolveInside(storageRoot)
+                val decision = SanitizePolicy.decide(
+                    status = record.status,
+                    dirty = record.id in dirty,
+                    downloadedBytes = downloaded(record.id),
+                    targetExists = target.isFile,
+                    partExists = part.isFile,
+                )
+                if (decision.deletePart) part.delete()
+                if (decision.clearBlocks) clearBlocks(record.id)
+                if (decision.zeroProgress) {
+                    val current = records.getValue(record.id)
+                    records[record.id] = current.copy(downloadedBytes = 0L, totalBytes = -1L, updatedAt = touched(current))
+                    zeroed += 1
+                }
+                if (decision.status != records.getValue(record.id).status) {
+                    val current = records.getValue(record.id)
+                    records[record.id] = current.copy(status = decision.status, updatedAt = touched(current))
+                }
+                if (decision.status == Status.QUEUED &&
+                    (record.status == Status.DOWNLOADING || record.status == Status.WAITING_NETWORK || decision.clearBlocks)
+                ) {
+                    requeued += 1
+                }
+                if (decision.clearBlocks) {
+                    dirty.remove(record.id)
+                    cleared += 1
+                }
+            }
+            SanitizeReport(requeued = requeued, cleared = cleared, zeroed = zeroed)
+        }
+    }
+
+    /**
+     * 用同一把锁包住 [block]。
+     *
+     * @param block 要一起完成的写入。
+     * @return [block] 的结果。
+     */
+    public override fun <T> transaction(block: () -> T): T = synchronized(monitor) { block() }
 
     private fun update(publicId: String, transform: (DownloadRecord) -> DownloadRecord) {
         synchronized(monitor) {

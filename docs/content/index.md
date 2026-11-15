@@ -73,4 +73,28 @@ FastDowload
   #description
   Docus 静态站点，由 GitHub Actions 发布到 GitHub Pages。
   :::
+
+  :::u-page-feature
+  ---
+  icon: i-lucide-replace
+  to: /guide/cookbook
+  ---
+  #title
+  换实现
+
+  #description
+  OkHttp、Cronet 和 RxJava。
+  :::
+
+  :::u-page-feature
+  ---
+  icon: i-lucide-shield-check
+  to: /guide/compatibility
+  ---
+  #title
+  兼容性结论
+
+  #description
+  minSdk、R8、分区存储，以及明确不做的多进程。
+  :::
 ::

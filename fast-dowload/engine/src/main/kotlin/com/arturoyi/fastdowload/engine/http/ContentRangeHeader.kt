@@ -17,7 +17,7 @@ import com.arturoyi.fastdowload.core.model.ContentRange
  * @param header 原始头字段值。null 或空白返回 null。
  * @return 解析出的区间；格式不符合时为 null。
  */
-internal fun parseContentRange(header: String?): ContentRange? {
+public fun parseContentRange(header: String?): ContentRange? {
     if (header.isNullOrBlank()) return null
     val value = header.trim()
     if (!value.startsWith("bytes", ignoreCase = true)) return null

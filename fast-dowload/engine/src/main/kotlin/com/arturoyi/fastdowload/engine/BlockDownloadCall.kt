@@ -16,17 +16,27 @@ import com.arturoyi.fastdowload.core.model.Defaults
 import com.arturoyi.fastdowload.core.model.DownloadBlock
 import com.arturoyi.fastdowload.core.model.DownloadRequest
 import com.arturoyi.fastdowload.core.model.HttpRequest
-import com.arturoyi.fastdowload.core.strategy.BlockSplitter
+import com.arturoyi.fastdowload.core.model.HttpResponse
+import com.arturoyi.fastdowload.core.monitor.DownloadMonitor
+import com.arturoyi.fastdowload.core.monitor.Stage
+import com.arturoyi.fastdowload.core.spi.BreakpointStrategy
+import com.arturoyi.fastdowload.core.spi.FilePolicy
+import com.arturoyi.fastdowload.core.spi.IntegrityVerifier
+import com.arturoyi.fastdowload.core.spi.RateLimiter
+import com.arturoyi.fastdowload.core.strategy.AdaptiveBreakpointStrategy
 import com.arturoyi.fastdowload.engine.file.DefaultFilePolicy
+import com.arturoyi.fastdowload.engine.verify.DefaultIntegrityVerifier
 import com.arturoyi.fastdowload.engine.file.DispositionVerdict
 import com.arturoyi.fastdowload.engine.file.FileAllocationException
 import com.arturoyi.fastdowload.engine.file.dispositionVerdict
+import com.arturoyi.fastdowload.core.spi.HttpClient
 import com.arturoyi.fastdowload.engine.http.OkHttpDownloadClient
 import com.arturoyi.fastdowload.engine.io.BlockWriter
 import com.arturoyi.fastdowload.engine.io.FileSink
 import com.arturoyi.fastdowload.engine.io.FlushOrderGuard
 import com.arturoyi.fastdowload.engine.io.PathFileLock
-import com.arturoyi.fastdowload.engine.store.InMemoryBreakpointStore
+import com.arturoyi.fastdowload.engine.retry.RetryingHttpClient
+import com.arturoyi.fastdowload.engine.store.BreakpointStore
 import com.arturoyi.fastdowload.engine.store.RemitSyncExecutor
 import com.arturoyi.fastdowload.engine.trial.ConnectTrial
 import com.arturoyi.fastdowload.engine.trial.TrialBaseline
@@ -63,20 +73,36 @@ internal class CrashInjection : RuntimeException("模拟进程退出")
  * @param listener 进度和重下原因。默认不接收。
  * @param remitDelayMs 偏移合并窗口，单位毫秒。
  * @param files 临时文件和预分配。
+ * @param delegateStatus 为 true 时不在下载线程改任务状态，由命令线程根据结果迁移。
+ * @param stop 调用方要求停止时置位。默认的令牌不会自己置位。
+ * @param publicId 已经登记的任务标识。null 时按请求重新打开或创建。
+ * @param rateLimiter 写入前领取的速度额度。默认不限速。
+ * @param monitor 阶段耗时和重下次数。默认不记录。
+ * @param strategy 分块方式。默认按文件长度分档。
+ * @param verifier 完成前的摘要核对。默认用输入流计算。
  */
 public class BlockDownloadCall(
     private val request: DownloadRequest,
     private val storageRoot: File,
-    private val store: InMemoryBreakpointStore,
-    private val client: OkHttpDownloadClient = OkHttpDownloadClient(),
+    private val store: BreakpointStore,
+    private val client: HttpClient = OkHttpDownloadClient(),
     private val locks: PathFileLock = Companion.sharedLocks,
     private val listener: BlockDownloadListener = BlockDownloadListener.NONE,
     private val remitDelayMs: Long = Defaults.REMIT_DELAY_MS,
-    private val files: DefaultFilePolicy = DefaultFilePolicy(),
+    private val files: FilePolicy = DefaultFilePolicy(),
+    private val delegateStatus: Boolean = false,
+    private val stop: InterruptToken = InterruptToken(),
+    private val publicId: String? = null,
+    private val rateLimiter: RateLimiter = RateLimiter.UNLIMITED,
+    private val monitor: DownloadMonitor = DownloadMonitor.NONE,
+    private val strategy: BreakpointStrategy = AdaptiveBreakpointStrategy,
+    private val verifier: IntegrityVerifier = DefaultIntegrityVerifier,
 ) {
-    private val trial = ConnectTrial(client)
+    private val transport = RetryingHttpClient(client)
+    private val trial = ConnectTrial(transport)
     private var taskId: String = ""
     private var remit: RemitSyncExecutor? = null
+    private var contentMd5: String? = null
 
     /**
      * 每提交一段字节后调用。
@@ -102,7 +128,15 @@ public class BlockDownloadCall(
             return failure(ErrorCode.UNKNOWN, error.message ?: "路径无法解析")
         }
         if (!acquired) return DownloadResult.Busy(TerminalCause.FILE_BUSY)
-        taskId = store.open(request).id
+        if (publicId != null && store.get(publicId) == null) {
+            locks.release(target)
+            return failure(ErrorCode.UNKNOWN, "任务不存在")
+        }
+        taskId = publicId ?: store.open(request).id
+        if (stop.isInterrupted()) {
+            locks.release(target)
+            return failure(ErrorCode.CANCELED, "已取消")
+        }
         val opened = FlushOrderGuard.openRemit(store, remitDelayMs)
         remit = opened
         var crashed = false
@@ -112,7 +146,7 @@ public class BlockDownloadCall(
             crashed = true
             throw crash
         } catch (failed: BlockFailed) {
-            if (taskId.isNotEmpty()) store.markFailed(taskId, failed.error)
+            if (!delegateStatus && taskId.isNotEmpty()) store.markFailed(taskId, failed.error)
             return DownloadResult.Failure(failed.error)
         } catch (error: Throwable) {
             return failure(errorCode(error), error.message ?: errorCode(error).name, cause = error)
@@ -152,12 +186,15 @@ public class BlockDownloadCall(
      * @return 结束结果。需要再试一轮时返回 null。
      */
     private fun step(part: File, target: File, restartAllowed: Boolean): DownloadResult? {
+        if (stop.isInterrupted()) return failure(ErrorCode.CANCELED, "已取消")
         localRestartCause(part, target)?.let { cause ->
             if (!restartAllowed) return failure(errorCode(cause), cause.name, resume = cause)
             restart(part, target, cause)
             return null
         }
+        val trialStarted = System.nanoTime()
         val decision = trial.execute(request.url, request.headers, store.baseline(taskId))
+        monitor.onStage(taskId, Stage.TRIAL, elapsedMs(trialStarted))
         if (dispositionVerdict(trial.contentDisposition) == DispositionVerdict.REJECT) {
             return failure(
                 ErrorCode.SECURITY_PATH_TRAVERSAL,
@@ -214,23 +251,30 @@ public class BlockDownloadCall(
         fingerprint: ContentFingerprint,
         useRanges: Boolean,
     ): DownloadResult {
+        if (stop.isInterrupted()) return failure(ErrorCode.CANCELED, "已取消")
         store.saveFingerprint(taskId, fingerprint)
         store.markDirty(taskId)
-        store.markDownloading(taskId)
+        if (!delegateStatus) store.markDownloading(taskId)
         val total = fingerprint.contentLength
         if (total >= 0L && !fingerprint.isChunked) {
             val blocks = resolveBlocks(total, useRanges)
             store.replaceBlocks(taskId, blocks)
             if (alreadyOnDisk(part, target, total)) return finish(part, target, total)
             files.preallocate(part, total)
+            val downloadStarted = System.nanoTime()
             writeBlocks(part, blocks, total, useRanges, fingerprint)
+            monitor.onStage(taskId, Stage.DOWNLOAD, elapsedMs(downloadStarted))
             remit().forceFlush()
+            if (stop.isInterrupted()) return failure(ErrorCode.CANCELED, "已取消")
             if (store.downloaded(taskId) != total) {
                 return failure(ErrorCode.UNKNOWN, "写入字节和资源长度不一致")
             }
             return finish(part, target, total)
         }
+        val downloadStarted = System.nanoTime()
         writeUnsized(part, fingerprint)
+        monitor.onStage(taskId, Stage.DOWNLOAD, elapsedMs(downloadStarted))
+        if (stop.isInterrupted()) return failure(ErrorCode.CANCELED, "已取消")
         return finish(part, target, part.length(), reportedTotal = fingerprint.contentLength)
     }
 
@@ -250,7 +294,7 @@ public class BlockDownloadCall(
         useRanges: Boolean,
         fingerprint: ContentFingerprint,
     ) {
-        val token = InterruptToken()
+        val token = stop
         val failure = AtomicReference<Throwable>()
         val committed = AtomicLong(store.downloaded(taskId))
         val writer = BlockWriter(token, request.bufferSize)
@@ -319,9 +363,10 @@ public class BlockDownloadCall(
             lastModified = fingerprint.lastModified,
         )
         val range = if (useRanges) block.rangeLeft..block.rangeRight else null
-        val response = client.execute(http(range, baseline))
+        val response = transport.execute(http(range, baseline))
         token.onInterrupt { response.close() }
         response.use { httpResponse ->
+            noteContentMd5(httpResponse)
             if (useRanges && httpResponse.code != 206 && !(httpResponse.code == 200 && block.startOffset == 0L)) {
                 throw BlockFailed(
                     downloadError(ErrorCode.SERVER_CANCELED, "HTTP ${httpResponse.code}", httpResponse.code),
@@ -349,7 +394,7 @@ public class BlockDownloadCall(
                 val writing = FlushOrderGuard(sink, taskId, remit())
                 val remaining = block.contentLength - block.currentOffset
                 try {
-                    writer.pump(body, remaining) { bytes, off, len ->
+                    writer.pump(body, remaining, onRead = { rateLimiter.acquire(it) }) { bytes, off, len ->
                         writing.writeAndCommit(block.index, bytes, off, len)
                         val done = committed.addAndGet(len.toLong())
                         listener.onProgress(done, total)
@@ -376,8 +421,9 @@ public class BlockDownloadCall(
     private fun writeUnsized(part: File, fingerprint: ContentFingerprint) {
         files.ensureParent(part)
         if (store.downloaded(taskId) == 0L && part.exists()) part.delete()
-        val response = client.execute(http(range = null, baseline = store.baseline(taskId)))
+        val response = transport.execute(http(range = null, baseline = store.baseline(taskId)))
         response.use { httpResponse ->
+            noteContentMd5(httpResponse)
             if (httpResponse.code !in 200..299) {
                 throw BlockFailed(
                     downloadError(ErrorCode.UNKNOWN, "HTTP ${httpResponse.code}", httpResponse.code),
@@ -387,8 +433,8 @@ public class BlockDownloadCall(
             var read = 0L
             FileSink(part).use { sink ->
                 sink.setLength(0L)
-                val writer = BlockWriter(InterruptToken(), request.bufferSize)
-                writer.pump(body, remaining = null) { bytes, off, len ->
+                val writer = BlockWriter(stop, request.bufferSize)
+                writer.pump(body, remaining = null, onRead = { rateLimiter.acquire(it) }) { bytes, off, len ->
                     sink.seek(read)
                     sink.write(bytes, off, len)
                     sink.flushAndSync()
@@ -427,6 +473,8 @@ public class BlockDownloadCall(
         reportedTotal: Long = total,
     ): DownloadResult {
         remit().forceFlush()
+        rejectHash(part, target)?.let { return it }
+        val commitStarted = System.nanoTime()
         if (part.exists()) files.commit(part, target)
         if (!target.isFile && total == 0L) {
             target.parentFile?.mkdirs()
@@ -436,7 +484,8 @@ public class BlockDownloadCall(
             return failure(ErrorCode.UNKNOWN, "完成后的文件长度不符")
         }
         store.clearDirty(taskId)
-        store.markCompleted(taskId)
+        monitor.onStage(taskId, Stage.COMMIT, elapsedMs(commitStarted))
+        if (!delegateStatus) store.markCompleted(taskId)
         listener.onProgress(store.downloaded(taskId), reportedTotal)
         return DownloadResult.Success(target.length())
     }
@@ -451,7 +500,7 @@ public class BlockDownloadCall(
     private fun resolveBlocks(total: Long, useRanges: Boolean): List<DownloadBlock> {
         val existing = store.blocksOf(taskId)
         if (blocksFit(existing, total)) return existing
-        return BlockSplitter.split(taskId, total, request.connectionCount, supportSeek = useRanges)
+        return strategy.split(taskId, total, request.connectionCount, supportSeek = useRanges)
     }
 
     /**
@@ -522,6 +571,7 @@ public class BlockDownloadCall(
      */
     private fun restart(part: File, target: File, cause: ResumeFailedCause) {
         logger.info("重下 ${cause.name}")
+        monitor.onRedownload(taskId, cause.name)
         listener.onResumeFailed(cause)
         files.discard(part, target)
         store.clearBlocks(taskId)
@@ -548,6 +598,43 @@ public class BlockDownloadCall(
 
     private fun remit(): RemitSyncExecutor = checkNotNull(remit) { "合并器尚未打开" }
 
+    /**
+     * 摘要不对时删掉临时文件和目标文件，并作废断点。
+     *
+     * 没有配置校验时返回 null，调用方继续提交。
+     *
+     * @param part 临时文件。
+     * @param target 最终文件。
+     * @return 摘要不一致时的失败。一致或未配置时为 null。
+     */
+    private fun rejectHash(part: File, target: File): DownloadResult? {
+        val spec = request.integrity ?: return null
+        val started = System.nanoTime()
+        val file = when {
+            part.isFile -> part
+            target.isFile -> target
+            else -> return failure(ErrorCode.INVALID_CONTENT_HASH, "没有可校验的文件")
+        }
+        val matched = verifier.verify(file, spec, contentMd5)
+        monitor.onStage(taskId, Stage.VERIFY, elapsedMs(started))
+        if (matched) return null
+        files.discard(part, target)
+        if (taskId.isNotEmpty()) {
+            store.clearBlocks(taskId)
+            store.clearDirty(taskId)
+        }
+        return failure(ErrorCode.INVALID_CONTENT_HASH, "摘要不一致")
+    }
+
+    private fun noteContentMd5(response: HttpResponse) {
+        if (contentMd5 != null) return
+        contentMd5 = response.headers.entries.firstOrNull { (name, _) ->
+            name.equals("Content-MD5", ignoreCase = true)
+        }?.value?.firstOrNull()
+    }
+
+    private fun elapsedMs(startedNanos: Long): Long = (System.nanoTime() - startedNanos) / 1_000_000L
+
     private fun failure(
         code: ErrorCode,
         message: String,
@@ -556,7 +643,7 @@ public class BlockDownloadCall(
         cause: Throwable? = null,
     ): DownloadResult.Failure {
         val error = downloadError(code, message, httpCode, resume, cause)
-        if (taskId.isNotEmpty()) store.markFailed(taskId, error)
+        if (!delegateStatus && taskId.isNotEmpty()) store.markFailed(taskId, error)
         return DownloadResult.Failure(error)
     }
 

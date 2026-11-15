@@ -23,15 +23,15 @@ include(":fast-dowload:core")
 include(":fast-dowload:engine")
 include(":fast-dowload:testing")
 include(":fast-dowload:sample")
-
-// FastDowload 后续子模块，当前不启用。
-// include(":fast-dowload:android")
-// include(":fast-dowload:okhttp")
-// include(":fast-dowload:ktx")
-// include(":fast-dowload:rx")
-// include(":fast-dowload:notification")
-// include(":fast-dowload:migrator")
-// include(":fast-dowload:benchmark")
+include(":fast-dowload:android")
+include(":fast-dowload:api")
+include(":fast-dowload:okhttp")
+include(":fast-dowload:ktx")
+include(":fast-dowload:benchmark")
+include(":fast-dowload:cronet")
+include(":fast-dowload:rx")
+include(":fast-dowload:matrix")
+include(":fast-dowload:bom")
 
 check(JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_17)) {
     """

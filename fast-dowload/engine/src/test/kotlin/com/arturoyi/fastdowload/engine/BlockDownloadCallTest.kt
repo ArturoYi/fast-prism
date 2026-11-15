@@ -12,7 +12,9 @@ import com.arturoyi.fastdowload.core.model.ContentFingerprint
 import com.arturoyi.fastdowload.core.model.Destination
 import com.arturoyi.fastdowload.core.model.DownloadBlock
 import com.arturoyi.fastdowload.core.model.DownloadRequest
+import com.arturoyi.fastdowload.core.model.IntegritySpec
 import com.arturoyi.fastdowload.core.model.PublicIds
+import com.arturoyi.fastdowload.core.spi.RateLimiter
 import com.arturoyi.fastdowload.core.strategy.BlockSplitter
 import com.arturoyi.fastdowload.engine.store.InMemoryBreakpointStore
 import com.arturoyi.fastdowload.testing.ChunkedResourceDispatcher
@@ -355,6 +357,58 @@ class BlockDownloadCallTest {
         assertEquals(sha256(body), sha256(file(root).readBytes()))
     }
 
+    /**
+     * 声明的 SHA-256 与文件不符时，不把临时文件改成最终文件。
+     */
+    @Test
+    fun scenario18RejectsMismatchedSha256() {
+        val body = patternedBody(8 * 1024)
+        server.server.dispatcher = RangedResourceDispatcher(body)
+        val root = tempRoot()
+        val request = request(root, connectionCount = 1).copy(
+            integrity = IntegritySpec.Sha256("0".repeat(64)),
+        )
+        val result = BlockDownloadCall(request, root, InMemoryBreakpointStore()).execute()
+        val failure = assertInstanceOf(DownloadResult.Failure::class.java, result)
+        assertEquals(ErrorCode.INVALID_CONTENT_HASH, failure.error.code)
+        assertFalse(file(root).exists())
+    }
+
+    /**
+     * 摘要一致时仍然提交最终文件。
+     */
+    @Test
+    fun matchingSha256CommitsTheFile() {
+        val body = patternedBody(8 * 1024)
+        server.server.dispatcher = RangedResourceDispatcher(body)
+        val root = tempRoot()
+        val request = request(root, connectionCount = 1).copy(
+            integrity = IntegritySpec.Sha256(sha256(body)),
+        )
+        val result = BlockDownloadCall(request, root, InMemoryBreakpointStore()).execute()
+        assertInstanceOf(DownloadResult.Success::class.java, result)
+        assertEquals(sha256(body), sha256(file(root).readBytes()))
+    }
+
+    /**
+     * 读取循环会按实际字节领取速度额度。
+     */
+    @Test
+    fun fetchLoopAcquiresEveryBodyByte() {
+        val body = patternedBody(32 * 1024)
+        server.server.dispatcher = RangedResourceDispatcher(body)
+        val root = tempRoot()
+        val limiter = CountingLimiter()
+        val result = BlockDownloadCall(
+            request(root, connectionCount = 1),
+            root,
+            InMemoryBreakpointStore(),
+            rateLimiter = limiter,
+        ).execute()
+        assertInstanceOf(DownloadResult.Success::class.java, result)
+        assertEquals(body.size, limiter.acquired)
+    }
+
     private fun download(
         request: DownloadRequest,
         root: File,
@@ -416,4 +470,15 @@ class BlockDownloadCallTest {
 private fun sha256(bytes: ByteArray): String {
     val digest = MessageDigest.getInstance("SHA-256").digest(bytes)
     return digest.joinToString(separator = "") { byte -> "%02x".format(byte.toInt() and 0xff) }
+}
+
+/**
+ * 累计 [RateLimiter.acquire] 收到的字节，本身不减速。
+ */
+private class CountingLimiter : RateLimiter {
+    var acquired: Int = 0
+
+    override fun acquire(bytes: Int) {
+        acquired += bytes
+    }
 }

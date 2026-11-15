@@ -139,10 +139,20 @@ for module in fast-dowload/core fast-dowload/engine fast-dowload/testing; do
   fi
 done
 
-if grep -q '@Disabled("M1 启用")' fast-dowload/engine/src/test/kotlin/com/arturoyi/fastdowload/engine/FlushOrderTest.kt; then
-  ok "FlushOrderTest 已按 M1 预留"
+flush_test="fast-dowload/engine/src/test/kotlin/com/arturoyi/fastdowload/engine/FlushOrderTest.kt"
+if grep -q 'fun flushAndSyncFailureDoesNotAdvancePersistedOffset' "$flush_test" \
+  && ! grep -q '@Disabled("M1 启用")' "$flush_test"; then
+  ok "FlushOrderTest 会检查同步失败时偏移不前进"
 else
-  bad "缺少 M1 FlushOrderTest 占位"
+  bad "FlushOrderTest 没有启用，或缺少失败注入"
+fi
+
+if grep -q 'sdk.android.library' fast-dowload/android/build.gradle.kts \
+  && ! grep -Eq 'sdk.android.library.published|com.vanniktech.maven.publish' fast-dowload/android/build.gradle.kts \
+  && grep -q 'include(":fast-dowload:android")' settings.gradle.kts; then
+  ok ":fast-dowload:android 是不发布的 Android 库"
+else
+  bad ":fast-dowload:android 未启用，或误挂了发布插件"
 fi
 
 manifest="fast-dowload/sample/src/main/AndroidManifest.xml"

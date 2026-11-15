@@ -8,6 +8,7 @@ package com.arturoyi.fastdowload.engine.http
 import com.arturoyi.fastdowload.core.model.Defaults
 import com.arturoyi.fastdowload.core.model.HttpRequest
 import com.arturoyi.fastdowload.core.model.HttpResponse
+import com.arturoyi.fastdowload.core.spi.HttpClient
 import okhttp3.Dispatcher
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -25,7 +26,7 @@ import java.util.concurrent.TimeUnit
  *
  * 调用会一直阻塞到响应头返回。返回后正文仍未读完，调用方必须关闭 [HttpResponse]。
  */
-public class OkHttpDownloadClient {
+public class OkHttpDownloadClient : HttpClient {
     /**
      * 发送 [request] 并返回尚未读完的响应。
      *
@@ -36,7 +37,7 @@ public class OkHttpDownloadClient {
      * @throws IOException 连接失败、超时或协议错误。此时连接已释放。
      * @throws IllegalArgumentException [request] 的方法需要请求体，或地址不被 OkHttp 接受。
      */
-    public fun execute(request: HttpRequest): HttpResponse {
+    public override fun execute(request: HttpRequest): HttpResponse {
         val call = clientFor(request).newCall(toOkHttpRequest(request))
         val response = try {
             call.execute()
@@ -89,6 +90,29 @@ public class OkHttpDownloadClient {
         }
         return builder.build()
     }
+
+    /**
+     * 发送 `HEAD` 并读取 `Content-Length`。
+     *
+     * 连接失败或状态码不是 2xx 时返回 `-1`。
+     *
+     * @param request 地址、请求头和超时。方法会被换成 `HEAD`。
+     * @return 声明的字节数。未知时为 `-1`。
+     */
+    public override fun getContentLength(request: HttpRequest): Long {
+        return try {
+            execute(request.copy(method = "HEAD", range = null)).use { response ->
+                if (response.code in 200..299) response.contentLength else -1L
+            }
+        } catch (_: IOException) {
+            -1L
+        }
+    }
+
+    /**
+     * 共享客户端留到进程结束，这里不关闭连接池。
+     */
+    public override fun close(): Unit = Unit
 
     /**
      * 把已经收到响应头的 OkHttp 响应映射为 [HttpResponse]。

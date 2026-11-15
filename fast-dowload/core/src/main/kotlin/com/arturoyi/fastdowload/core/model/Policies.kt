@@ -154,7 +154,7 @@ public data class RetryPolicy(
 /**
  * 下载完成后如何确认文件没有损坏。
  *
- * 具体校验尚未在单连接下载里执行；这里只保存调用方给出的条件。
+ * 校验发生在把临时文件改成最终文件之前。对不上时最终文件不会出现。
  */
 public sealed interface IntegritySpec {
     /**
@@ -190,8 +190,48 @@ public sealed interface IntegritySpec {
 }
 
 /**
- * SHA-256 十六进制文本：正好 64 个 `0-9` 或 `a-f`，大小写不敏感。
+ * 把校验条件写成可以放进数据库的短文本。
+ *
+ * 空条件不要调用。结果只有 `sha256:`、`md5:` 和 `content-md5` 三种。
+ *
+ * @return 持久化用的文本。
  */
+public fun IntegritySpec.encoded(): String {
+    return when (this) {
+        is IntegritySpec.Sha256 -> "sha256:$hex"
+        is IntegritySpec.Md5 -> "md5:$hex"
+        IntegritySpec.ContentMd5 -> "content-md5"
+    }
+}
+
+/**
+ * 从数据库里的短文本还原校验条件。
+ *
+ * 空白、无法识别或摘要长度不对时返回 null，避免一条坏记录让整个队列读不出来。
+ *
+ * @param encoded [encoded] 的结果，或空字符串。
+ * @return 还原出的条件。不能用时为 null。
+ */
+public fun decodeIntegrity(encoded: String): IntegritySpec? {
+    if (encoded.isEmpty()) return null
+    return when {
+        encoded == "content-md5" -> IntegritySpec.ContentMd5
+        encoded.startsWith("sha256:") -> encoded.removePrefix("sha256:").toIntegrityOrNull(::sha256OrNull)
+        encoded.startsWith("md5:") -> encoded.removePrefix("md5:").toIntegrityOrNull(::md5OrNull)
+        else -> null
+    }
+}
+
+private fun sha256OrNull(hex: String): IntegritySpec? {
+    return if (SHA256_HEX.matches(hex)) IntegritySpec.Sha256(hex) else null
+}
+
+private fun md5OrNull(hex: String): IntegritySpec? {
+    return if (MD5_HEX.matches(hex)) IntegritySpec.Md5(hex) else null
+}
+
+private fun String.toIntegrityOrNull(parse: (String) -> IntegritySpec?): IntegritySpec? = parse(this)
+
 private val SHA256_HEX: Regex = Regex("[0-9a-fA-F]{64}")
 
 /**

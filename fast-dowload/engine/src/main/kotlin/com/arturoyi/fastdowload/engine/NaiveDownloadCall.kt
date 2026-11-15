@@ -11,6 +11,7 @@ import com.arturoyi.fastdowload.core.model.Defaults
 import com.arturoyi.fastdowload.core.model.DownloadRequest
 import com.arturoyi.fastdowload.core.model.HttpRequest
 import com.arturoyi.fastdowload.core.model.HttpResponse
+import com.arturoyi.fastdowload.core.spi.HttpClient
 import com.arturoyi.fastdowload.engine.http.OkHttpDownloadClient
 import com.arturoyi.fastdowload.engine.io.FileSink
 import java.io.File
@@ -29,7 +30,7 @@ import java.io.File
 public class NaiveDownloadCall(
     private val request: DownloadRequest,
     private val storageRoot: File,
-    private val client: OkHttpDownloadClient = OkHttpDownloadClient(),
+    private val client: HttpClient = OkHttpDownloadClient(),
     private val onProgress: ProgressCallback = ProgressCallback { _, _ -> },
 ) {
     /**

@@ -1,0 +1,6 @@
+-keep class com.arturoyi.fastdowload.api.** { public *; }
+-keep class com.arturoyi.fastdowload.core.model.** { public *; }
+-keep class com.arturoyi.fastdowload.core.state.Status { *; }
+-keep class com.arturoyi.fastdowload.core.error.** { public *; }
+-keep class com.arturoyi.fastdowload.core.spi.** { public *; }
+-keep class com.arturoyi.fastdowload.core.monitor.** { public *; }

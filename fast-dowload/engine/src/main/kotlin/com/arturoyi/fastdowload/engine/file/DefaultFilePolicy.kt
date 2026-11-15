@@ -6,6 +6,8 @@
 package com.arturoyi.fastdowload.engine.file
 
 import com.arturoyi.fastdowload.core.model.Destination
+import com.arturoyi.fastdowload.core.model.downloadPartFile
+import com.arturoyi.fastdowload.core.spi.FilePolicy
 import com.arturoyi.fastdowload.engine.io.FileSink
 import java.io.File
 import java.io.IOException
@@ -27,9 +29,9 @@ public class FileAllocationException(
 /**
  * 在内部目录里写临时文件，完成后再改成目标名。
  *
- * 可用空间用 [File.getUsableSpace] 判断。这里没有 Android 的 `StatFs`。
+ * 可用空间用 [File.getUsableSpace] 判断。
  */
-public class DefaultFilePolicy {
+public class DefaultFilePolicy : FilePolicy {
     /**
      * 返回和目标文件同目录的临时文件。
      *
@@ -40,9 +42,8 @@ public class DefaultFilePolicy {
      * @param publicId 任务标识。
      * @return 尚不一定存在的临时文件。
      */
-    public fun partFile(root: File, destination: Destination, publicId: String): File {
-        val target = destination.resolveInside(root)
-        return File(target.parentFile, target.name + "." + publicId + ".part")
+    public override fun partFile(root: File, destination: Destination, publicId: String): File {
+        return downloadPartFile(root, destination, publicId)
     }
 
     /**
@@ -53,7 +54,7 @@ public class DefaultFilePolicy {
      * @param file 即将写入的文件。
      * @throws IOException 父目录无法创建。
      */
-    public fun ensureParent(file: File) {
+    public override fun ensureParent(file: File) {
         val parent = file.parentFile ?: return
         if (!parent.isDirectory && !parent.mkdirs()) {
             throw IOException("无法创建内部目录")
@@ -70,14 +71,15 @@ public class DefaultFilePolicy {
      * @throws FileAllocationException 还需要写入的字节数大于可用空间。
      * @throws IOException 父目录或文件长度无法创建。
      */
-    public fun preallocate(file: File, length: Long) {
+    public override fun preallocate(file: File, length: Long) {
         ensureParent(file)
         val parent = file.parentFile
         val existing = if (file.exists()) file.length() else 0L
         val needed = (length - existing).coerceAtLeast(0L)
         if (needed > 0L) {
+            // Android 的 java.nio.file 不实现 getFileStore，调用会抛 UnsupportedOperationException("getFileStore")。
             val free = parent?.usableSpace ?: 0L
-            if (free < needed) throw FileAllocationException(needed, free)
+            ensureSpace(free, needed)
         }
         FileSink(file).use { sink ->
             if (file.length() < length) sink.setLength(length)
@@ -93,7 +95,7 @@ public class DefaultFilePolicy {
      * @param target 最终文件。
      * @throws IOException 改名失败。
      */
-    public fun commit(part: File, target: File) {
+    public override fun commit(part: File, target: File) {
         val source = part.toPath()
         val destination = target.toPath()
         try {
@@ -116,7 +118,7 @@ public class DefaultFilePolicy {
      * @param part 临时文件。
      * @param target 最终文件。
      */
-    public fun discard(part: File, target: File) {
+    public override fun discard(part: File, target: File) {
         part.delete()
         target.delete()
     }

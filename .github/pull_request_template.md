@@ -1,10 +1,10 @@
 ## 门禁
 
 - [ ] 本阶段所有 Step 的完成判据逐条勾选
-- [ ] `./gradlew test` 全绿（M4 起再加 `apiCheck`）
+- [ ] `./gradlew ciCheck` 全绿
 - [ ] 新增场景编号已在测试矩阵中打勾
-- [ ] core / engine 编译 classpath 无 Android 依赖
+- [ ] R1~R6 逐条确认
+- [ ] core / engine 编译 classpath 无 `android.*`
 - [ ] 默认值只写在 `Defaults.kt`
-- [ ] 下载只写入应用内部目录，没有新增存储、通知或前台服务权限
-- [ ] 没有暂停、取消或停止接口
+- [ ] 杀进程恢复测试结果已记录
 - [ ] CHANGELOG 已更新

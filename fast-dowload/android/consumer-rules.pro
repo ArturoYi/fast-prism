@@ -1,0 +1,5 @@
+-keep class com.arturoyi.fastdowload.android.background.DownloadForegroundService { *; }
+-keep class com.arturoyi.fastdowload.android.background.DownloadKeepAliveWorker { *; }
+-keep class com.arturoyi.fastdowload.android.db.** { *; }
+-keep class com.arturoyi.fastdowload.core.spi.** { public *; }
+-keep class com.arturoyi.fastdowload.core.monitor.** { public *; }
