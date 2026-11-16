@@ -1,10 +1,23 @@
 export default defineAppConfig({
+  ui: {
+    colors: {
+      primary: 'green',
+    },
+  },
   seo: {
-    title: 'FastDowload',
+    title: 'FastPrism',
     description: 'FastDowload：把文件下载到应用内部目录。',
   },
   header: {
-    title: 'FastDowload',
+    title: 'FastPrism',
+    logo: {
+      light: '/logo.svg',
+      dark: '/logo-on-dark.svg',
+      alt: 'FastPrism',
+      display: 'logo',
+      class: 'h-7 w-auto',
+      favicon: '/logo.svg',
+    },
   },
   github: false,
   toc: {

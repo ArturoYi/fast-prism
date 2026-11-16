@@ -14,10 +14,8 @@ tasks.named("check") {
         ":fast-dowload:api:check",
         ":fast-dowload:okhttp:check",
         ":fast-dowload:ktx:check",
-        ":fast-dowload:benchmark:check",
         ":fast-dowload:cronet:check",
         ":fast-dowload:rx:check",
-        ":fast-dowload:matrix:check",
         ":fast-dowload:bom:check",
     )
 }

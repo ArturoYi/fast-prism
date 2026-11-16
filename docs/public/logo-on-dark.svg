@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480" role="img" aria-labelledby="title">
+  <title id="title">FastPrism</title>
+  <path fill="#3DDC84" d="M0 0H600L560 160H160V320H440L400 480H0Z"/>
+  <path fill="#207546" d="M480 160H800L760 320H440Z"/>
+</svg>

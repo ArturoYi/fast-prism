@@ -9,6 +9,7 @@
     "preview": "nuxt preview --extends docus"
   },
   "dependencies": {
+    "@tanstack/vue-virtual": "^3.13.52",
     "better-sqlite3": "^12.5.0",
     "docus": "5.15.0",
     "nuxt": "^4.2.2"
