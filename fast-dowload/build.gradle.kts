@@ -12,6 +12,7 @@ tasks.named("check") {
         ":fast-dowload:sample:check",
         ":fast-dowload:android:check",
         ":fast-dowload:api:check",
+        ":fast-dowload:notify:check",
         ":fast-dowload:okhttp:check",
         ":fast-dowload:ktx:check",
         ":fast-dowload:cronet:check",

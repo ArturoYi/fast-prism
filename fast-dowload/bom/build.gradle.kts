@@ -19,6 +19,7 @@ dependencies {
             "engine",
             "android",
             "api",
+            "notify",
             "okhttp",
             "ktx",
             "cronet",

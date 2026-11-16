@@ -14,6 +14,7 @@ android {
 
 dependencies {
     implementation(project(":fast-dowload:api"))
+    implementation(project(":fast-dowload:notify"))
     implementation(project(":fast-dowload:ktx"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)

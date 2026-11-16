@@ -5,13 +5,13 @@
  *
  * @file
  */
-package com.arturoyi.fastdowload.android.background
+package com.arturoyi.fastdowload.notify.background
 
 import android.app.Service
 import android.content.Intent
 import android.os.Build
 import android.os.IBinder
-import com.arturoyi.fastdowload.android.notification.DownloadNotifications
+import com.arturoyi.fastdowload.notify.notification.DownloadNotifications
 
 /**
  * dataSync 前台服务。通知在 [onStartCommand] 里立刻挂上。

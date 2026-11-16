@@ -5,7 +5,7 @@
  *
  * @file
  */
-package com.arturoyi.fastdowload.android.background
+package com.arturoyi.fastdowload.notify.background
 
 import android.content.Context
 import android.os.Build
@@ -16,7 +16,7 @@ import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkManager
 import androidx.work.Worker
 import androidx.work.WorkerParameters
-import com.arturoyi.fastdowload.android.notification.DownloadNotifications
+import com.arturoyi.fastdowload.notify.notification.DownloadNotifications
 import java.util.logging.Level
 import java.util.logging.Logger
 
@@ -57,7 +57,7 @@ internal class WorkManagerKeepAlive(
 
     private companion object {
         private const val UNIQUE_NAME: String = "fastdowload-keepalive"
-        private val logger: Logger = Logger.getLogger("com.arturoyi.fastdowload.android.background.work")
+        private val logger: Logger = Logger.getLogger("com.arturoyi.fastdowload.notify.background.work")
     }
 }
 

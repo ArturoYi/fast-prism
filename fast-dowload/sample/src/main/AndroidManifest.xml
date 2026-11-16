@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- 文件仍写在应用内部目录。SDK 会合并前台服务和通知权限，用来在有任务时保活。进程被杀掉后不会自动续跑。 -->
+    <!-- 文件仍写在应用内部目录。notify 会合并前台服务和通知权限，用来在有任务时保活。进程被杀掉后不会自动续跑。 -->
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application

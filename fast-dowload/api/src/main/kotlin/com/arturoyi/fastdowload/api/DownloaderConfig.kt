@@ -34,12 +34,13 @@ import com.arturoyi.fastdowload.engine.store.BreakpointStore
  * @property autoStart 清洗残留任务后是否立刻开始排队中的下载。
  * @property speedLimitBytes 全局速度上限，单位是字节每秒。null 表示不限。下载读到字节后会按这个上限等待。
  * @property loggingEnabled 是否保留诊断日志。调试细节默认关闭。
- * @property backgroundMode 有任务时如何保活。默认只在当前进程内下载。三种模式都不保证进程被杀掉后自动续跑。
+ * @property backgroundMode 有任务时如何保活。默认只在当前进程内下载。前台服务和 WorkManager 要另外依赖 `fast-dowload-notify`。三种模式都不保证进程被杀掉后自动续跑。
  * @property breakpointStrategy 分块方式。null 时按文件长度分档。
  * @property filePolicy 临时文件和预分配。null 时用内部目录里的默认策略。
  * @property integrityVerifier 完成前的摘要核对。null 时用内置的 SHA-256 / MD5 实现。
  * @property monitor 阶段耗时和错误分布。null 时写诊断日志。
- * @property backgroundExecutor 保活实现。null 时按 [backgroundMode] 创建。关闭下载器时会关闭它。
+ * @property backgroundExecutor 保活实现。null 时再看 [backgroundExecutorFactory]。都没有且模式是进程内时，使用进程内计数。关闭下载器时会关闭它。
+ * @property backgroundExecutorFactory 延迟创建保活。下载器创建时把暂停回调传进去。已有 [backgroundExecutor] 时忽略。
  */
 public class DownloaderConfig internal constructor(
     public val context: Context,
@@ -58,6 +59,7 @@ public class DownloaderConfig internal constructor(
     public val integrityVerifier: IntegrityVerifier? = null,
     public val monitor: DownloadMonitor? = null,
     public val backgroundExecutor: BackgroundExecutor? = null,
+    public val backgroundExecutorFactory: BackgroundExecutorFactory? = null,
     internal val networkGate: NetworkGate? = null,
 ) {
     /**
@@ -84,6 +86,7 @@ public class DownloaderConfig internal constructor(
         private var integrityVerifier: IntegrityVerifier? = null
         private var monitor: DownloadMonitor? = null
         private var backgroundExecutor: BackgroundExecutor? = null
+        private var backgroundExecutorFactory: BackgroundExecutorFactory? = null
         private var networkGate: NetworkGate? = null
 
         /**
@@ -194,7 +197,7 @@ public class DownloaderConfig internal constructor(
         /**
          * 选择有任务时如何保活。
          *
-         * 默认 [BackgroundMode.IN_PROCESS]。前台服务和 WorkManager 只在进程还活着时有用，进程被杀掉后要等下次启动从断点继续。
+         * 默认 [BackgroundMode.IN_PROCESS]。前台保活要依赖 `fast-dowload-notify` 并调用 `foregroundService()`，其中包含系统拒绝前台服务时改走 WorkManager。只改这个枚举不会启动服务。进程被杀掉后要等下次启动从断点继续。
          *
          * @param value 保活方式。
          * @return 这个建造器。
@@ -255,13 +258,26 @@ public class DownloaderConfig internal constructor(
         /**
          * 替换保活实现。
          *
-         * 不调用时按 [backgroundMode] 创建。传入的实例会在下载器关闭时一起关闭。
+         * 不调用时，进程内模式使用进程内计数。前台模式要注册保活工厂。传入的实例会在下载器关闭时一起关闭。实例和工厂都有时，用实例。
          *
          * @param value 活跃任务数变化时调用的保活。
          * @return 这个建造器。
          */
         public fun backgroundExecutor(value: BackgroundExecutor): Builder {
             backgroundExecutor = value
+            return this
+        }
+
+        /**
+         * 注册保活工厂。
+         *
+         * 下载器创建调度器时调用 [BackgroundExecutorFactory.create]，并把暂停按钮接到对应任务。已有 [backgroundExecutor] 实例时以实例为准。
+         *
+         * @param factory 按暂停回调创建保活。
+         * @return 这个建造器。
+         */
+        public fun backgroundExecutor(factory: BackgroundExecutorFactory): Builder {
+            backgroundExecutorFactory = factory
             return this
         }
 
@@ -301,6 +317,7 @@ public class DownloaderConfig internal constructor(
                 integrityVerifier = integrityVerifier,
                 monitor = monitor,
                 backgroundExecutor = backgroundExecutor,
+                backgroundExecutorFactory = backgroundExecutorFactory,
                 networkGate = networkGate,
             )
         }

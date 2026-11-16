@@ -18,7 +18,6 @@ android {
 dependencies {
     api(project(":fast-dowload:engine"))
     implementation(libs.room.runtime)
-    implementation(libs.androidx.work.runtime)
     ksp(libs.room.compiler)
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)

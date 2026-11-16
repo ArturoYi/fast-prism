@@ -12,7 +12,6 @@ import android.os.Looper
 import android.util.Log
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
-import com.arturoyi.fastdowload.android.background.BackgroundExecutor as AndroidBackground
 import com.arturoyi.fastdowload.android.background.BackgroundMode
 import com.arturoyi.fastdowload.android.db.RoomDownloadRepository
 import com.arturoyi.fastdowload.android.net.NetworkMonitor
@@ -307,6 +306,8 @@ public class FastDownloader private constructor(
          */
         @JvmStatic
         public fun create(config: DownloaderConfig): FastDownloader {
+            val dispatcherBox = AtomicReference<CommandDispatcher>()
+            val background = openBackground(config) { id -> dispatcherBox.get()?.pause(id) }
             val repository = config.repository ?: RoomDownloadRepository(
                 config.context,
                 databaseName(config.namespace),
@@ -321,12 +322,6 @@ public class FastDownloader private constructor(
             val monitor = config.monitor ?: LoggingDownloadMonitor(debug = false)
             repository.setFlushObserver { monitor.onRepositoryWrite() }
             val ownedNetwork = if (config.networkGate == null) NetworkMonitor(config.context) else null
-            val dispatcherBox = AtomicReference<CommandDispatcher>()
-            val background = config.backgroundExecutor ?: AndroidBackground(
-                context = config.context,
-                mode = config.backgroundMode,
-                onPause = { id -> dispatcherBox.get()?.pause(id) },
-            )
             val dispatcher = CommandDispatcher(
                 repository = repository,
                 runner = EngineDownloadRunner(
@@ -404,6 +399,25 @@ public class FastDownloader private constructor(
          * @param namespace 实例名字。
          * @return 以 `.db` 结尾的文件名。
          */
+        /**
+         * 选出这一次下载器的保活。
+         *
+         * 已传入实例时用实例。否则调用工厂，并把暂停按钮交给它。都没有时，进程内模式只计数。前台模式缺少工厂时失败，避免静默退回进程内。
+         */
+        private fun openBackground(
+            config: DownloaderConfig,
+            onPause: (String) -> Unit,
+        ): BackgroundExecutor {
+            config.backgroundExecutor?.let { return it }
+            config.backgroundExecutorFactory?.let { return it.create(config.context, onPause) }
+            if (config.backgroundMode != BackgroundMode.IN_PROCESS) {
+                throw IllegalStateException(
+                    "前台保活在 fast-dowload-notify。依赖该模块后调用 foregroundService()",
+                )
+            }
+            return InProcessBackground()
+        }
+
         @JvmStatic
         public fun databaseName(namespace: String): String = "$namespace.db"
 

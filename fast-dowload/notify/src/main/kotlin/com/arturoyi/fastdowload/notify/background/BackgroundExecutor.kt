@@ -5,30 +5,17 @@
  *
  * @file
  */
-package com.arturoyi.fastdowload.android.background
+package com.arturoyi.fastdowload.notify.background
 
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import com.arturoyi.fastdowload.android.notification.DownloadNotifications
-import com.arturoyi.fastdowload.android.notification.NotificationReceiverSlot
+import com.arturoyi.fastdowload.android.background.BackgroundMode
+import com.arturoyi.fastdowload.notify.notification.DownloadNotifications
+import com.arturoyi.fastdowload.notify.notification.NotificationReceiverSlot
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.logging.Level
 import java.util.logging.Logger
-
-/**
- * 进程被系统允许时，用前台服务或 WorkManager 保活。
- */
-public enum class BackgroundMode {
-    /** 只使用调用方已经在跑的线程，不启动服务。 */
-    IN_PROCESS,
-
-    /** 有排队或下载中的任务时启动 dataSync 前台服务。系统拒绝时改用 WorkManager。 */
-    FOREGROUND_SERVICE,
-
-    /** 把保活交给 WorkManager。 */
-    WORK_MANAGER,
-}
 
 /**
  * 启动或取消保活工作。
@@ -171,7 +158,7 @@ public class BackgroundExecutor internal constructor(
     }
 
     public companion object {
-        private val logger: Logger = Logger.getLogger("com.arturoyi.fastdowload.android.background")
+        private val logger: Logger = Logger.getLogger("com.arturoyi.fastdowload.notify.background")
 
         /**
          * Android 12 及以后，后台不允许启动前台服务时改走 WorkManager。

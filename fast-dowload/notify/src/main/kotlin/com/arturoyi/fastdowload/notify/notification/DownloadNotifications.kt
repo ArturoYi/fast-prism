@@ -5,7 +5,7 @@
  *
  * @file
  */
-package com.arturoyi.fastdowload.android.notification
+package com.arturoyi.fastdowload.notify.notification
 
 import android.Manifest
 import android.app.Notification

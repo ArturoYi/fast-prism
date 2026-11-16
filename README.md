@@ -13,6 +13,7 @@
 | `:fast-dowload:engine` | 纯 JVM | 下载、命令队列、断点。默认 HTTP 客户端是 `HttpURLConnection` |
 | `:fast-dowload:android` | Android 库 | Room、网络状态、内容 Uri 写入 |
 | `:fast-dowload:api` | Android 库 | `FastDownloader` 门面、主线程回调、Kotlin DSL 与 Java Builder |
+| `:fast-dowload:notify` | Android 库，可选 | 前台服务、通知、WorkManager 保活。不依赖时不合并这些权限 |
 | `:fast-dowload:okhttp` | 纯 JVM | 显式注册的 OkHttp 客户端 |
 | `:fast-dowload:ktx` | Android 库 | `await`、进度 Flow |
 | `:fast-dowload:testing` | 纯 JVM，不发布 | MockWebServer 夹具 |

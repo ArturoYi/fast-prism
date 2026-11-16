@@ -3,10 +3,11 @@
  *
  * @file
  */
-package com.arturoyi.fastdowload.android.background
+package com.arturoyi.fastdowload.notify.background
 
 import android.app.ForegroundServiceStartNotAllowedException
-import com.arturoyi.fastdowload.android.notification.DownloadNotifications
+import com.arturoyi.fastdowload.android.background.BackgroundMode
+import com.arturoyi.fastdowload.notify.notification.DownloadNotifications
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull

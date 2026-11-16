@@ -3,7 +3,7 @@
  *
  * @file
  */
-package com.arturoyi.fastdowload.android.notification
+package com.arturoyi.fastdowload.notify.notification
 
 import android.content.Intent
 import android.os.Looper
