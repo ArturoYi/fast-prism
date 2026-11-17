@@ -6,7 +6,7 @@ export default defineAppConfig({
   },
   seo: {
     title: 'FastPrism',
-    description: 'FastDowload：把文件下载到应用内部目录。',
+    description: 'FastDownload：把文件下载到应用内部目录。',
   },
   header: {
     title: 'FastPrism',

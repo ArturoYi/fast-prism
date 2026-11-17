@@ -1,0 +1,3 @@
+-keep class com.arturoyi.fastdownload.android.db.** { *; }
+-keep class com.arturoyi.fastdownload.core.spi.** { public *; }
+-keep class com.arturoyi.fastdownload.core.monitor.** { public *; }

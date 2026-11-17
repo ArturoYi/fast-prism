@@ -18,19 +18,19 @@ dependencyResolutionManagement {
 
 rootProject.name = "fast-prism"
 
-include(":fast-dowload")
-include(":fast-dowload:core")
-include(":fast-dowload:engine")
-include(":fast-dowload:testing")
-include(":fast-dowload:sample")
-include(":fast-dowload:android")
-include(":fast-dowload:api")
-include(":fast-dowload:notify")
-include(":fast-dowload:okhttp")
-include(":fast-dowload:ktx")
-include(":fast-dowload:cronet")
-include(":fast-dowload:rx")
-include(":fast-dowload:bom")
+include(":fast-download")
+include(":fast-download:core")
+include(":fast-download:engine")
+include(":fast-download:testing")
+include(":fast-download:sample")
+include(":fast-download:android")
+include(":fast-download:api")
+include(":fast-download:notify")
+include(":fast-download:okhttp")
+include(":fast-download:ktx")
+include(":fast-download:cronet")
+include(":fast-download:rx")
+include(":fast-download:bom")
 
 check(JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_17)) {
     """

@@ -1,0 +1,2 @@
+-keep class com.arturoyi.fastdownload.notify.background.DownloadForegroundService { *; }
+-keep class com.arturoyi.fastdownload.notify.background.DownloadKeepAliveWorker { *; }

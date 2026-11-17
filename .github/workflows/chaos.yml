@@ -27,4 +27,4 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: 混沌恢复
-        run: ./gradlew :fast-dowload:engine:test --tests com.arturoyi.fastdowload.engine.ChaosResumeTest --stacktrace
+        run: ./gradlew :fast-download:engine:test --tests com.arturoyi.fastdownload.engine.ChaosResumeTest --stacktrace

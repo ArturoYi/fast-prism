@@ -20,7 +20,7 @@ lifecycle = "2.7.0"
 work = "2.9.1"
 rxjava = "3.1.10"
 cronet = "143.7445.0"
-fastdowload = "1.0.0-rc"
+fastdownload = "1.0.0-rc"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "androidxCore" }

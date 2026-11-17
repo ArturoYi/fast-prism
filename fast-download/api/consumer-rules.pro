@@ -1,0 +1,6 @@
+-keep class com.arturoyi.fastdownload.api.** { public *; }
+-keep class com.arturoyi.fastdownload.core.model.** { public *; }
+-keep class com.arturoyi.fastdownload.core.state.Status { *; }
+-keep class com.arturoyi.fastdownload.core.error.** { public *; }
+-keep class com.arturoyi.fastdownload.core.spi.** { public *; }
+-keep class com.arturoyi.fastdownload.core.monitor.** { public *; }
