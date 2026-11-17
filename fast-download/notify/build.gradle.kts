@@ -3,7 +3,7 @@ plugins {
     alias(libs.plugins.sdk.android.library.published)
 }
 
-group = "io.github.ArturoYi"
+group = "io.github.arturoyi"
 version = libs.versions.fastdownload.get()
 
 sdkPublish {

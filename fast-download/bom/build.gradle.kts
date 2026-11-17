@@ -2,7 +2,7 @@ plugins {
     alias(libs.plugins.sdk.bom)
 }
 
-group = "io.github.ArturoYi"
+group = "io.github.arturoyi"
 version = libs.versions.fastdownload.get()
 
 sdkPublish {
@@ -25,7 +25,7 @@ dependencies {
             "cronet",
             "rx",
         ).forEach { module ->
-            api("io.github.ArturoYi:fast-download-$module:$sdkVersion")
+            api("io.github.arturoyi:fast-download-$module:$sdkVersion")
         }
     }
 }

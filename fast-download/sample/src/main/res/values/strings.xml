@@ -14,7 +14,6 @@
     <string name="progress_unknown">已写入 %1$d 字节</string>
     <string name="status_done">下载完成，共 %1$d 字节</string>
     <string name="status_failed">下载失败：%1$s</string>
-    <string name="path_value">%1$s</string>
     <string name="progress_description">下载进度</string>
     <string name="saved_tasks">已保存的任务</string>
     <string name="tasks_empty">还没有保存的任务。</string>

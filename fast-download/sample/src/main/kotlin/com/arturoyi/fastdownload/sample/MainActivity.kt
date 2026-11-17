@@ -88,9 +88,13 @@ class MainActivity : AppCompatActivity() {
      * 把示例地址放进队列。
      */
     private fun enqueue() {
+        val relative = getString(R.string.demo_relative_path)
+        val slash = relative.lastIndexOf('/')
+        val directory = if (slash < 0) "" else relative.substring(0, slash)
+        val fileName = if (slash < 0) relative else relative.substring(slash + 1)
         val id = FastDownloader.getDefault().tasks.enqueue(
             downloadRequest(getString(R.string.demo_url)) {
-                saveTo("downloads", "fast-download-10m.bin")
+                saveTo(directory, fileName)
             },
         )
         findViewById<TextView>(R.id.path).text = id
@@ -105,6 +109,13 @@ class MainActivity : AppCompatActivity() {
         val progress = findViewById<ProgressBar>(R.id.progress)
         val status = findViewById<TextView>(R.id.status)
         val path = findViewById<TextView>(R.id.path)
+        findViewById<Button>(R.id.download).setText(
+            if (current?.status == Status.DOWNLOADING) {
+                R.string.action_downloading
+            } else {
+                R.string.action_download
+            },
+        )
         if (current == null) {
             progress.progress = 0
             status.setText(R.string.status_idle)

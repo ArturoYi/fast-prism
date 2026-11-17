@@ -4,7 +4,7 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
-group = "io.github.ArturoYi"
+group = "io.github.arturoyi"
 version = libs.versions.fastdownload.get()
 
 sdkPublish {
