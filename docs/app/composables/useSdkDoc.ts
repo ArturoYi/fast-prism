@@ -1,10 +1,5 @@
 import type { ContentNavigationItem } from '@nuxt/content'
-
-interface SdkSection {
-  title: string
-  icon?: string
-  icons?: Record<string, string>
-}
+import { sdkSection } from '../utils/sdkSections'
 
 interface SdkArticle {
   title: string
@@ -32,14 +27,7 @@ export async function useSdkDoc() {
   const id = computed(() => location.value.id)
   const slug = computed(() => location.value.slug)
 
-  const { data: section } = await useAsyncData(
-    () => id.value ? `sdk-section-${id.value}` : 'sdk-section-idle',
-    () => {
-      if (!id.value) return Promise.resolve(null)
-      return $fetch<SdkSection>(`/api/sdk-section/${id.value}`).catch(() => null)
-    },
-    { watch: [id] },
-  )
+  const section = computed(() => id.value ? sdkSection(id.value) : null)
 
   const { data: articles } = await useAsyncData(
     () => id.value ? `sdk-articles-${id.value}` : 'sdk-articles-idle',

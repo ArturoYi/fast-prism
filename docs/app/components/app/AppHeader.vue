@@ -5,8 +5,6 @@ const { forced: forcedColorMode } = useDocusColorMode()
 
 const githubUrl = 'https://github.com/ArturoYi/fast-prism'
 const isHome = computed(() => route.path === localePath('/'))
-const sdkPath = computed(() => localePath('/sdks'))
-const isSdk = computed(() => route.path === sdkPath.value || route.path.startsWith(`${sdkPath.value}/`))
 const { active: sdkDoc, navigation: sdkNavigation } = await useSdkDoc()
 </script>
 
@@ -23,15 +21,6 @@ const { active: sdkDoc, navigation: sdkNavigation } = await useSdkDoc()
 
     <template #right>
       <UContentSearchButton class="lg:hidden" />
-
-      <UButton
-        :to="sdkPath"
-        color="neutral"
-        :variant="isSdk ? 'soft' : 'ghost'"
-        :aria-current="isSdk ? 'page' : undefined"
-      >
-        SDK
-      </UButton>
 
       <ClientOnly v-if="!forcedColorMode">
         <UColorModeButton />

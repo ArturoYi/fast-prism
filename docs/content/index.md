@@ -26,7 +26,6 @@ FastPrism
   :::magnetic-button
   ---
   to: /guide/modules
-  trailing-icon: i-lucide-arrow-right
   ---
   快速了解
   :::

@@ -18,6 +18,9 @@ const reduceMotion = ref(false)
 const finePointer = ref(false)
 
 const docTo = computed(() => localePath(props.sdk.docPath))
+const externalLinks = computed(() =>
+  (props.sdk.links ?? []).filter(link => link.href.startsWith('https://')),
+)
 
 const tiltStyle = computed(() => ({
   transform: `rotateX(${rx.value}deg) rotateY(${ry.value}deg)`,
@@ -129,11 +132,37 @@ onUnmounted(() => {
         <p class="summary">
           {{ sdk.summary }}
         </p>
+        <nav
+          v-if="externalLinks.length"
+          aria-label="相关链接"
+        >
+          <ul class="links">
+            <li
+              v-for="link in externalLinks"
+              :key="link.href"
+            >
+              <a
+                :href="link.href"
+                target="_blank"
+                rel="noopener noreferrer"
+                :title="link.title"
+                :aria-label="`${link.title || link.label}，新窗口`"
+              >
+                {{ link.label }}
+                <UIcon
+                  name="i-lucide-arrow-up-right"
+                  class="ext"
+                  aria-hidden="true"
+                />
+              </a>
+            </li>
+          </ul>
+        </nav>
         <UButton
           class="doc"
           :to="docTo"
           color="neutral"
-          size="lg"
+          size="md"
           trailing-icon="i-lucide-arrow-right"
         >
           使用文档
@@ -165,8 +194,8 @@ onUnmounted(() => {
 
 .halo {
   z-index: 0;
-  inset: -36px;
-  border-radius: 52px;
+  inset: -24px;
+  border-radius: 40px;
   opacity: 0;
   filter: blur(16px);
   transition: opacity 0.2s ease;
@@ -174,7 +203,7 @@ onUnmounted(() => {
 
 .halo-clip {
   position: absolute;
-  inset: 36px;
+  inset: 24px;
   overflow: hidden;
   border-radius: 16px;
 }
@@ -229,7 +258,7 @@ onUnmounted(() => {
   inset: 1px;
   display: flex;
   flex-direction: column;
-  padding: 24px;
+  padding: 16px;
   border-radius: 15px;
   background: var(--ui-bg);
 }
@@ -247,17 +276,20 @@ onUnmounted(() => {
 }
 
 .name {
+  overflow: hidden;
   color: var(--ui-text-highlighted);
-  font-size: 32px;
+  font-size: 20px;
   font-weight: 600;
-  line-height: 40px;
+  line-height: 28px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .version,
 .summary {
   color: var(--ui-text);
-  font-size: 16px;
-  line-height: 24px;
+  font-size: 14px;
+  line-height: 20px;
 }
 
 .version {
@@ -265,7 +297,53 @@ onUnmounted(() => {
 }
 
 .summary {
-  margin-top: 16px;
+  display: -webkit-box;
+  margin-top: 8px;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 8px;
+  margin: 8px -8px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.links a {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 48px;
+  min-height: 48px;
+  padding: 8px;
+  border-radius: 8px;
+  color: var(--ui-text);
+  font-size: 14px;
+  line-height: 20px;
+  text-decoration-line: underline;
+  text-decoration-color: color-mix(in oklch, var(--ui-text) 45%, transparent);
+  text-underline-offset: 4px;
+}
+
+.links a:hover {
+  color: var(--ui-text-highlighted);
+  text-decoration-color: var(--ui-primary);
+}
+
+.links a:focus-visible {
+  outline: 2px solid var(--ui-primary);
+  outline-offset: 2px;
+}
+
+.ext {
+  width: 14px;
+  height: 14px;
+  flex: none;
 }
 
 .doc {

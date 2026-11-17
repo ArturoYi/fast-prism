@@ -1,15 +1,14 @@
 <script setup lang="ts">
 import { useInfiniteScroll, useResizeObserver } from '@vueuse/core'
 import { useVirtualizer, type VirtualItem } from '@tanstack/vue-virtual'
-import type { SdkEntry, SdkPage } from '#shared/sdks'
+import { sdkCatalog, type SdkEntry } from '#shared/sdks'
 
 defineOptions({ name: 'SdkCatalog' })
 
-const COLUMN_GAP = 32
-const ROW_GAP = 48
-const MIN_CARD_WIDTH = 300
-const ASPECT_WIDTH = 4
-const ASPECT_HEIGHT = 5
+const COLUMN_GAP = 16
+const ROW_GAP = 24
+const MIN_CARD_WIDTH = 240
+const CARD_HEIGHT = 288
 
 const scroller = ref<HTMLElement | null>(null)
 const contentWidth = ref(0)
@@ -21,7 +20,6 @@ const failed = ref(false)
 
 const ready = computed(() => contentWidth.value > 0 && viewportHeight.value > 0)
 const columns = computed(() => columnsFor(contentWidth.value))
-const cardHeight = computed(() => cardHeightFor(contentWidth.value, columns.value))
 
 useResizeObserver(scroller, (entries) => {
   const entry = entries[0]
@@ -33,12 +31,12 @@ useResizeObserver(scroller, (entries) => {
 const virtualizer = useVirtualizer(computed(() => ({
   count: modules.value.length,
   getScrollElement: () => scroller.value,
-  estimateSize: () => cardHeight.value,
+  estimateSize: () => CARD_HEIGHT,
   lanes: columns.value,
   gap: ROW_GAP,
   overscan: 2,
-  paddingStart: 72,
-  paddingEnd: 80,
+  paddingStart: 32,
+  paddingEnd: 48,
   getItemKey: (index: number) => modules.value[index]?.id ?? index,
 })))
 
@@ -50,10 +48,6 @@ const cells = computed(() => {
     if (!sdk) return []
     return [{ key: item.key, item, sdk }]
   })
-})
-
-watch(cardHeight, () => {
-  virtualizer.value.measure()
 })
 
 const { isLoading, reset } = useInfiniteScroll(
@@ -74,38 +68,25 @@ function columnsFor(width: number) {
   return Math.max(1, Math.floor((width + COLUMN_GAP) / (MIN_CARD_WIDTH + COLUMN_GAP)))
 }
 
-function cardHeightFor(width: number, cols: number) {
-  const cardWidth = width <= 0
-    ? MIN_CARD_WIDTH
-    : (width - COLUMN_GAP * (cols - 1)) / cols
-  return Math.max(1, Math.round(cardWidth * ASPECT_HEIGHT / ASPECT_WIDTH))
-}
-
 function pageLimit() {
   const cols = Math.max(1, columns.value)
-  const stride = cardHeight.value + ROW_GAP
+  const stride = CARD_HEIGHT + ROW_GAP
   const rows = Math.max(1, Math.ceil(viewportHeight.value / stride))
   return cols * rows
 }
 
-async function loadMore() {
+function loadMore() {
   if (failed.value) return
   if (settled.value && modules.value.length >= total.value) return
   const offset = modules.value.length
   const limit = pageLimit()
-  try {
-    const page = await $fetch<SdkPage>('/api/sdks', {
-      query: { offset, limit },
-    })
-    if (modules.value.length !== offset) return
-    const seen = new Set(modules.value.map(item => item.id))
-    const next = page.items.filter(item => !seen.has(item.id))
-    modules.value = modules.value.concat(next)
-    total.value = next.length === 0 ? modules.value.length : page.total
-    settled.value = true
-  } catch {
-    failed.value = true
-  }
+  const page = sdkCatalog.slice(offset, offset + limit)
+  if (modules.value.length !== offset) return
+  const seen = new Set(modules.value.map(item => item.id))
+  const next = page.filter(item => !seen.has(item.id))
+  modules.value = modules.value.concat(next)
+  total.value = sdkCatalog.length
+  settled.value = true
 }
 
 function retry() {

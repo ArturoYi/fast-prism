@@ -1,9 +1,16 @@
+export interface SdkLink {
+  label: string
+  href: string
+  title?: string
+}
+
 export interface SdkEntry {
   id: string
   name: string
   version: string
   summary: string
   docPath: string
+  links?: readonly SdkLink[]
 }
 
 export interface SdkPage {
@@ -21,5 +28,20 @@ export const sdkCatalog: readonly SdkEntry[] = [
     version: '1.0.0-rc',
     summary: '把文件下载到应用内部目录。对外入口是 FastDownloader，回调在主线程。',
     docPath: '/sdks/fast-download/overview',
+    links: [
+      {
+        label: '下载',
+        title: '在 Maven Central 打开 fast-download-bom',
+        href: 'https://central.sonatype.com/artifact/io.github.arturoyi/fast-download-bom',
+      },
+      {
+        label: '源码',
+        href: 'https://github.com/ArturoYi/fast-prism/tree/main/fast-download',
+      },
+      {
+        label: '许可',
+        href: 'https://www.apache.org/licenses/LICENSE-2.0.txt',
+      },
+    ],
   },
 ]
