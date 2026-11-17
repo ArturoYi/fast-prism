@@ -59,5 +59,9 @@ gradlePlugin {
             id = "sdk.jvm.library"
             implementationClass = "sdk.buildlogic.JvmLibraryConventionPlugin"
         }
+        register("jvmLibraryPublished") {
+            id = "sdk.jvm.library.published"
+            implementationClass = "sdk.buildlogic.JvmLibraryPublishedConventionPlugin"
+        }
     }
 }

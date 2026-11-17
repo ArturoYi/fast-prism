@@ -11,6 +11,7 @@ import android.app.Service
 import android.content.Intent
 import android.os.Build
 import android.os.IBinder
+import androidx.annotation.RequiresApi
 import com.arturoyi.fastdowload.notify.notification.DownloadNotifications
 
 /**
@@ -55,8 +56,9 @@ public class DownloadForegroundService : Service() {
 }
 
 /**
- * 只在 Android 10 及以上才会加载，避免旧系统校验不存在的前台服务类型。
+ * 只在 Android 10 及以上调用。注解让 lint 按 API 29 检查，而不是按 minSdk 26。
  */
+@RequiresApi(29)
 internal object Api29Foreground {
     /**
      * 带 dataSync 类型启动前台服务。

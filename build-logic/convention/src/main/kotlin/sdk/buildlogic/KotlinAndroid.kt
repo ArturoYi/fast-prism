@@ -9,6 +9,13 @@ import org.gradle.kotlin.dsl.getByType
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
 
+/** 编译器用 JDK 17。打进 AAR / JAR 的字节码是 11，宿主不必跟着升到 17。 */
+internal const val SDK_JDK = 17
+
+internal val SDK_JAVA_VERSION: JavaVersion = JavaVersion.VERSION_11
+
+internal val SDK_JVM_TARGET: JvmTarget = JvmTarget.JVM_11
+
 internal fun Project.versionInt(name: String): Int {
     val catalog = extensions.getByType<VersionCatalogsExtension>().named("libs")
     val version = catalog.findVersion(name)
@@ -36,8 +43,9 @@ internal fun Project.configureKotlinAndroid(
         compileSdk = versionInt("compileSdk")
         defaultConfig.minSdk = versionInt("minSdk")
         compileOptions {
-            sourceCompatibility = JavaVersion.VERSION_17
-            targetCompatibility = JavaVersion.VERSION_17
+            isCoreLibraryDesugaringEnabled = true
+            sourceCompatibility = SDK_JAVA_VERSION
+            targetCompatibility = SDK_JAVA_VERSION
         }
         buildFeatures {
             buildConfig = false
@@ -45,15 +53,20 @@ internal fun Project.configureKotlinAndroid(
         testOptions.animationsDisabled = true
     }
 
-    // 与 JVM 模块相同：Kotlin 编译固定用 JDK 17，不跟着运行 Gradle 的更高版本走。
     extensions.configure<KotlinAndroidProjectExtension> {
-        jvmToolchain(17)
+        jvmToolchain(SDK_JDK)
         if (explicitApi) {
             explicitApi()
         }
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_17)
+            jvmTarget.set(SDK_JVM_TARGET)
             allWarningsAsErrors.set(stringProperty("warningsAsErrors") == "true")
         }
     }
+
+    val desugar = extensions.getByType<VersionCatalogsExtension>()
+        .named("libs")
+        .findLibrary("desugar-jdk-libs")
+    check(desugar.isPresent) { "gradle/libs.versions.toml 缺少 desugar-jdk-libs" }
+    dependencies.addProvider("coreLibraryDesugaring", desugar.get())
 }

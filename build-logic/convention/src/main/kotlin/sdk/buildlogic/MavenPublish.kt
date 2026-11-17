@@ -1,29 +1,49 @@
 package sdk.buildlogic
 
 import com.vanniktech.maven.publish.AndroidSingleVariantLibrary
+import com.vanniktech.maven.publish.JavaLibrary
 import com.vanniktech.maven.publish.JavaPlatform
+import com.vanniktech.maven.publish.JavadocJar
 import com.vanniktech.maven.publish.MavenPublishBaseExtension
 import com.vanniktech.maven.publish.Platform
 import com.vanniktech.maven.publish.SonatypeHost
 import org.gradle.api.GradleException
 import org.gradle.api.Project
+import org.gradle.api.publish.PublishingExtension
+import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.publish.maven.tasks.PublishToMavenRepository
+import org.gradle.jvm.tasks.Jar
 import org.gradle.kotlin.dsl.configure
+import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
 
 /**
  * jcenter/bintray 已关停，本仓库不配置 com.jfrog.bintray。
  *
- * SNAPSHOT 上传到 [SONATYPE_SNAPSHOT_REPOSITORY]。
- * Release 不能直接写到 [SONATYPE_RELEASE_REPOSITORY]：OSSRH 只接受 staging 仓库上传，
- * close & release 之后构件才会进入 releases 仓库和 Maven Central。
- * 这个切换由 com.vanniktech.maven.publish 0.28.0 的 publishToMavenCentral(SonatypeHost.DEFAULT) 完成。
+ * 默认主机是 [SonatypeHost.CENTRAL_PORTAL]。Release 由插件上传到 Central Portal，
+ * 发布完成后从 [MAVEN_CENTRAL_REPOSITORY] 解析。
+ * com.vanniktech.maven.publish 0.28.0 不能把 SNAPSHOT 发到 Central Portal。
+ *
+ * [SonatypeHost.DEFAULT] 与 [SonatypeHost.S01] 仍指向已关闭的 OSSRH。
+ * SNAPSHOT 分别上传到 [OSSRH_SNAPSHOT_REPOSITORY]、[S01_SNAPSHOT_REPOSITORY]。
+ * Release 不能直接写 releases 仓库，close & release 之后才会进入
+ * [OSSRH_RELEASE_REPOSITORY]、[S01_RELEASE_REPOSITORY]。
  */
-internal const val SONATYPE_SNAPSHOT_REPOSITORY =
+internal const val CENTRAL_PORTAL_URL = "https://central.sonatype.com"
+
+internal const val MAVEN_CENTRAL_REPOSITORY = "https://repo1.maven.org/maven2/"
+
+internal const val OSSRH_SNAPSHOT_REPOSITORY =
     "https://oss.sonatype.org/content/repositories/snapshots/"
 
-internal const val SONATYPE_RELEASE_REPOSITORY =
+internal const val OSSRH_RELEASE_REPOSITORY =
     "https://oss.sonatype.org/content/repositories/releases/"
+
+internal const val S01_SNAPSHOT_REPOSITORY =
+    "https://s01.oss.sonatype.org/content/repositories/snapshots/"
+
+internal const val S01_RELEASE_REPOSITORY =
+    "https://s01.oss.sonatype.org/content/repositories/releases/"
 
 private val REQUIRED_POM_PROPERTIES = listOf(
     "POM_URL",
@@ -43,7 +63,17 @@ internal fun Project.configureAndroidLibraryPublishing() {
         AndroidSingleVariantLibrary(
             variant = "release",
             sourcesJar = true,
-            publishJavadocJar = true,
+            // AGP 8.7 的 Dokka 读不了 Kotlin 2.2 sealed class 的 PermittedSubclasses。
+            publishJavadocJar = false,
+        ),
+    )
+}
+
+internal fun Project.configureJvmLibraryPublishing() {
+    configureMavenPublishing(
+        JavaLibrary(
+            javadocJar = JavadocJar.Empty(),
+            sourcesJar = true,
         ),
     )
 }
@@ -59,6 +89,17 @@ internal fun Project.configureMavenPublishing(platform: Platform) {
     }
 
     pluginManager.apply("com.vanniktech.maven.publish")
+    if (platform is AndroidSingleVariantLibrary) {
+        // 必须在 signAllPublications 之前挂上，签名才会包含这个空 jar。
+        val emptyJavadocJar = tasks.register<Jar>("emptyJavadocJar") {
+            archiveClassifier.set("javadoc")
+        }
+        extensions.configure<PublishingExtension>("publishing") {
+            publications.withType<MavenPublication>().configureEach {
+                artifact(emptyJavadocJar)
+            }
+        }
+    }
     val publishExtension = extensions.create("sdkPublish", SdkPublishExtension::class.java)
     val automaticRelease = stringProperty("sdk.automaticRelease") == "true"
 
@@ -87,12 +128,36 @@ internal fun Project.configureMavenPublishing(platform: Platform) {
 }
 
 private fun Project.resolveSonatypeHost(): SonatypeHost {
-    return when (stringProperty("sdk.sonatypeHost") ?: "DEFAULT") {
+    return when (stringProperty("sdk.sonatypeHost") ?: "CENTRAL_PORTAL") {
+        "CENTRAL_PORTAL" -> SonatypeHost.CENTRAL_PORTAL
         "DEFAULT" -> SonatypeHost.DEFAULT
         "S01" -> SonatypeHost.S01
         else -> throw GradleException(
-            "sdk.sonatypeHost 只支持 DEFAULT（oss.sonatype.org）或 S01（s01.oss.sonatype.org）",
+            "sdk.sonatypeHost 只支持 CENTRAL_PORTAL（central.sonatype.com）、DEFAULT（oss.sonatype.org）或 S01（s01.oss.sonatype.org）",
         )
+    }
+}
+
+private data class PublishRepositories(
+    val snapshotRepository: String,
+    val releaseRepository: String,
+)
+
+private fun SonatypeHost.publishRepositories(): PublishRepositories {
+    return when (this) {
+        SonatypeHost.CENTRAL_PORTAL -> PublishRepositories(
+            snapshotRepository = "unsupported",
+            releaseRepository = MAVEN_CENTRAL_REPOSITORY,
+        )
+        SonatypeHost.S01 -> PublishRepositories(
+            snapshotRepository = S01_SNAPSHOT_REPOSITORY,
+            releaseRepository = S01_RELEASE_REPOSITORY,
+        )
+        SonatypeHost.DEFAULT -> PublishRepositories(
+            snapshotRepository = OSSRH_SNAPSHOT_REPOSITORY,
+            releaseRepository = OSSRH_RELEASE_REPOSITORY,
+        )
+        else -> throw GradleException("无法识别的 Sonatype 主机: $this")
     }
 }
 
@@ -152,16 +217,38 @@ private fun Project.finalizeSdkCoordinates(publishExtension: SdkPublishExtension
 
     val coordinatesLine = "$resolvedGroup:$artifactId:$publishedVersion"
     val automaticRelease = stringProperty("sdk.automaticRelease") == "true"
+    val sonatypeHost = resolveSonatypeHost()
+    val repositories = sonatypeHost.publishRepositories()
     tasks.register("printSdkCoordinates") {
         group = "publishing"
         description = "打印本模块的 GAV 和 Sonatype 仓库，不上传。"
         doLast {
             println("sdk.coordinates=$coordinatesLine")
-            println("sdk.snapshotRepository=$SONATYPE_SNAPSHOT_REPOSITORY")
-            println("sdk.releaseRepository=$SONATYPE_RELEASE_REPOSITORY")
+            println("sdk.sonatypeHost=${sonatypeHostName(sonatypeHost)}")
+            println("sdk.portal=${portalUrl(sonatypeHost)}")
+            println("sdk.snapshotRepository=${repositories.snapshotRepository}")
+            println("sdk.releaseRepository=${repositories.releaseRepository}")
             println("sdk.snapshot=$snapshot")
             println("sdk.automaticRelease=$automaticRelease")
         }
+    }
+}
+
+private fun sonatypeHostName(host: SonatypeHost): String {
+    return when (host) {
+        SonatypeHost.CENTRAL_PORTAL -> "CENTRAL_PORTAL"
+        SonatypeHost.S01 -> "S01"
+        SonatypeHost.DEFAULT -> "DEFAULT"
+        else -> host.toString()
+    }
+}
+
+private fun portalUrl(host: SonatypeHost): String {
+    return when (host) {
+        SonatypeHost.CENTRAL_PORTAL -> CENTRAL_PORTAL_URL
+        SonatypeHost.S01 -> "https://s01.oss.sonatype.org"
+        SonatypeHost.DEFAULT -> "https://oss.sonatype.org"
+        else -> host.toString()
     }
 }
 

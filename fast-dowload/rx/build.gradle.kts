@@ -1,9 +1,16 @@
 plugins {
     alias(libs.plugins.sdk.android.library)
+    alias(libs.plugins.sdk.android.library.published)
 }
 
 group = "io.fastdowload"
-version = "1.0.0-rc"
+version = libs.versions.fastdowload.get()
+
+sdkPublish {
+    artifactId.set("fast-dowload-rx")
+    displayName.set("FastDowload Rx")
+    description.set("用 RxJava 3 订阅下载")
+}
 
 android {
     namespace = "com.arturoyi.fastdowload.rx"

@@ -37,4 +37,4 @@
 
 核心模块的 `check` 会跑 `assertJvmOnly`，编译 classpath 里不能出现 Android 构件。
 
-构建脚本是 Gradle Kotlin DSL。发布约定留在 `build-logic`。FastDowload 这一阶段还没有接上发布插件。
+构建脚本是 Gradle Kotlin DSL。发布约定留在 `build-logic`。除 `testing` 和 `sample` 外，FastDowload 模块都已接上发布插件，当前预览版是 `1.0.0-rc`。

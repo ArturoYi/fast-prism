@@ -73,9 +73,15 @@ public class NotificationReceiverSlot(
         if (Build.VERSION.SDK_INT >= 33) {
             context.registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED)
         } else {
-            context.registerReceiver(receiver, filter)
+            // API 33 以下没有导出标志。ContextCompat 会改成签名权限，测试进程没有该权限。
+            registerWithoutExportFlag(context, filter)
         }
         registered = true
+    }
+
+    @Suppress("UnspecifiedRegisterReceiverFlag")
+    private fun registerWithoutExportFlag(context: Context, filter: IntentFilter) {
+        context.registerReceiver(receiver, filter)
     }
 
     /**

@@ -2,10 +2,12 @@
 
 ## Unreleased
 
+## 1.0.0-rc - 2026-11-17
+
 - 前台保活抽到可选模块 `fast-dowload-notify`。只依赖 `fast-dowload-api` 时保持进程内下载，不合并通知、前台服务和 WorkManager 带入的权限。调用 `foregroundService()` 注册；系统拒绝前台服务时改走 WorkManager。
 - FastDowload 1.0.0-rc：12 个可替换接口都有真实实现和替身实现，换实现不改 `core`。
 - 可选模块：OkHttp、Cronet、RxJava 3。接入方用 `fast-dowload-bom` 对齐版本。
-- 兼容性结论写在文档站：minSdk 26、targetSdk 34、R8 不靠类名反射、只写应用内部目录或调用方给出的 Uri、多进程不是目标。
+- 兼容性结论写在文档站：minSdk 26、targetSdk 36、R8 不靠类名反射、只写应用内部目录或调用方给出的 Uri、多进程不是目标。
 
 - FastDowload 0.9.0-rc：失败按指数退避重试，默认最多 3 次；没有网络时进入等待网络，不消耗次数。
 - 全局和单任务令牌桶限速。`setGlobalSpeedLimit` 会作用到正在进行的下载。

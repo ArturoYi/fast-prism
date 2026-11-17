@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.sdk.android.lint) apply false
     alias(libs.plugins.sdk.bom) apply false
     alias(libs.plugins.sdk.jvm.library) apply false
+    alias(libs.plugins.sdk.jvm.library.published) apply false
     alias(libs.plugins.ksp) apply false
 }
 

@@ -1,10 +1,16 @@
 plugins {
     alias(libs.plugins.sdk.jvm.library)
+    alias(libs.plugins.sdk.jvm.library.published)
 }
 
-// M0 不发布。坐标先定稿，接上 published convention 后再发。
 group = "io.fastdowload"
-version = "1.0.0-rc"
+version = libs.versions.fastdowload.get()
+
+sdkPublish {
+    artifactId.set("fast-dowload-core")
+    displayName.set("FastDowload Core")
+    description.set("请求、分块、状态、错误码，以及 HTTP 与写出目标契约")
+}
 
 dependencies {
     testImplementation(libs.junit.jupiter)

@@ -1,9 +1,16 @@
 plugins {
     alias(libs.plugins.sdk.jvm.library)
+    alias(libs.plugins.sdk.jvm.library.published)
 }
 
 group = "io.fastdowload"
-version = "1.0.0-rc"
+version = libs.versions.fastdowload.get()
+
+sdkPublish {
+    artifactId.set("fast-dowload-okhttp")
+    displayName.set("FastDowload OkHttp")
+    description.set("显式注册的 OkHttp 客户端")
+}
 
 dependencies {
     api(project(":fast-dowload:engine"))

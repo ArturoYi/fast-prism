@@ -1,9 +1,16 @@
 plugins {
     alias(libs.plugins.sdk.android.library)
+    alias(libs.plugins.sdk.android.library.published)
 }
 
 group = "io.fastdowload"
-version = "1.0.0-rc"
+version = libs.versions.fastdowload.get()
+
+sdkPublish {
+    artifactId.set("fast-dowload-cronet")
+    displayName.set("FastDowload Cronet")
+    description.set("Cronet 客户端，引擎由接入方提供")
+}
 
 android {
     namespace = "com.arturoyi.fastdowload.cronet"

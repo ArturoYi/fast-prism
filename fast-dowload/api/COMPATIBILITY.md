@@ -10,4 +10,4 @@
 
 `BackgroundMode` 和 `DownloaderConfig.Builder.backgroundMode()` 仍在原来的位置。前台服务以及它的 WorkManager 退路在 `fast-dowload-notify`，用 `foregroundService()` 注册。只设置 `FOREGROUND_SERVICE` 或 `WORK_MANAGER` 而不调用 `foregroundService()` 时，`FastDownloader.init` 会失败。
 
-完整的系统兼容性结论在文档站的「兼容性」一页：minSdk 26、targetSdk 34、R8、分区存储，以及多进程不做。
+完整的系统兼容性结论在文档站的「兼容性」一页：minSdk 26、compileSdk 36、字节码 11、R8、分区存储，以及多进程不做。

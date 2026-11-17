@@ -2,6 +2,7 @@ package sdk.buildlogic
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier
 import org.gradle.api.plugins.BasePluginExtension
 import org.gradle.api.plugins.JavaPluginExtension
@@ -10,7 +11,6 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.withType
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 
 class JvmLibraryConventionPlugin : Plugin<Project> {
@@ -29,19 +29,25 @@ class JvmLibraryConventionPlugin : Plugin<Project> {
             extensions.configure<BasePluginExtension> {
                 archivesName.set(path.removePrefix(":").replace(':', '-'))
             }
-            // 支持 JDK 17+。编译和测试固定用 17，避免在更高 JDK 上调用 17 没有的 API。
+            // JDK 17 只用来编译。发布出去的字节码是 11，和 Android 库一致。
             extensions.configure<JavaPluginExtension> {
                 toolchain {
-                    languageVersion.set(JavaLanguageVersion.of(17))
+                    languageVersion.set(JavaLanguageVersion.of(SDK_JDK))
                 }
+                sourceCompatibility = SDK_JAVA_VERSION
+                targetCompatibility = SDK_JAVA_VERSION
             }
             extensions.configure<KotlinJvmProjectExtension> {
-                jvmToolchain(17)
+                jvmToolchain(SDK_JDK)
                 explicitApi()
                 compilerOptions {
-                    jvmTarget.set(JvmTarget.JVM_17)
+                    jvmTarget.set(SDK_JVM_TARGET)
+                    freeCompilerArgs.add("-Xjdk-release=${SDK_JAVA_VERSION.majorVersion}")
                     allWarningsAsErrors.set(stringProperty("warningsAsErrors") == "true")
                 }
+            }
+            tasks.withType<JavaCompile>().configureEach {
+                options.release.set(SDK_JAVA_VERSION.majorVersion.toInt())
             }
             tasks.withType<Test>().configureEach {
                 useJUnitPlatform()

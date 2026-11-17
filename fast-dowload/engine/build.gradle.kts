@@ -1,9 +1,16 @@
 plugins {
     alias(libs.plugins.sdk.jvm.library)
+    alias(libs.plugins.sdk.jvm.library.published)
 }
 
 group = "io.fastdowload"
-version = "1.0.0-rc"
+version = libs.versions.fastdowload.get()
+
+sdkPublish {
+    artifactId.set("fast-dowload-engine")
+    displayName.set("FastDowload Engine")
+    description.set("下载、命令队列和断点")
+}
 
 dependencies {
     api(project(":fast-dowload:core"))

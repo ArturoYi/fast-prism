@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "io.fastdowload"
-version = "1.0.0-rc"
+version = libs.versions.fastdowload.get()
 
 sdkPublish {
     artifactId.set("fast-dowload-bom")
