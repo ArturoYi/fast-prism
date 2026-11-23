@@ -32,6 +32,12 @@ include(":fast-download:cronet")
 include(":fast-download:rx")
 include(":fast-download:bom")
 
+include(":album-cleaner")
+include(":album-cleaner:core")
+include(":album-cleaner:storage")
+include(":album-cleaner:scan")
+include(":album-cleaner:sample")
+
 check(JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_17)) {
     """
     本工程需要 JDK 17+，当前是 ${JavaVersion.current()}。

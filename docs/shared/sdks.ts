@@ -44,4 +44,21 @@ export const sdkCatalog: readonly SdkEntry[] = [
       },
     ],
   },
+  {
+    id: 'album-cleaner',
+    name: 'AlbumCleaner',
+    version: '0.1.0',
+    summary: '开发中',
+    docPath: '/sdks/album-cleaner/overview',
+    links: [
+      {
+        label: '源码',
+        href: 'https://github.com/ArturoYi/fast-prism/tree/main/album-cleaner',
+      },
+      {
+        label: '许可',
+        href: 'https://www.apache.org/licenses/LICENSE-2.0.txt',
+      },
+    ],
+  },
 ]

@@ -130,12 +130,10 @@ function cellStyle(item: VirtualItem) {
       class="scroller"
       :aria-busy="isLoading"
     >
-      <p
+      <DocsLoader
         v-if="!modules.length && !failed"
-        class="note"
-      >
-        正在加载
-      </p>
+        label="正在加载"
+      />
       <div
         v-else-if="failed && !modules.length"
         class="note"
@@ -192,7 +190,11 @@ function cellStyle(item: VirtualItem) {
           重试
         </UButton>
       </template>
-      <span v-else>正在加载</span>
+      <DocsLoader
+        v-else
+        compact
+        label="正在加载"
+      />
     </div>
   </div>
 </template>

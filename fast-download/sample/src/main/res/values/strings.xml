@@ -1,21 +1,149 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">FastDownload</string>
-    <string name="title">FastDownload</string>
-    <string name="caption">文件只保存在应用内部目录。有下载时显示前台通知。进程被杀掉后不会自动续跑，下次打开从断点继续。</string>
-    <string name="label_url">地址</string>
-    <string name="demo_url" translatable="false">https://speed.cloudflare.com/__down?bytes=10485760</string>
-    <string name="demo_relative_path" translatable="false">downloads/fast-download-10m.bin</string>
-    <string name="action_download">开始下载</string>
-    <string name="action_downloading">正在下载</string>
-    <string name="status_idle">点按开始，下载约 10MB 到内部目录。</string>
-    <string name="path_idle">完成后在这里显示内部路径。</string>
-    <string name="progress_known">已写入 %1$d / %2$d 字节</string>
-    <string name="progress_unknown">已写入 %1$d 字节</string>
-    <string name="status_done">下载完成，共 %1$d 字节</string>
-    <string name="status_failed">下载失败：%1$s</string>
-    <string name="progress_description">下载进度</string>
-    <string name="saved_tasks">已保存的任务</string>
-    <string name="tasks_empty">还没有保存的任务。</string>
-    <string name="task_row">%1$s · %2$s</string>
+
+    <string name="tab_downloads">下载</string>
+    <string name="tab_files">文件</string>
+    <string name="tab_settings">设置</string>
+
+    <string name="downloads_title">下载</string>
+    <string name="downloads_subtitle">粘贴 https 链接。没完成的会留在这里。</string>
+    <string name="downloads_subtitle_sample">粘贴 https 链接，或点一个示例。没完成的会留在这里。</string>
+    <string name="url_label">链接</string>
+    <string name="url_placeholder">https://</string>
+    <string name="action_add">添加</string>
+    <string name="downloads_empty">还没有下载</string>
+    <string name="sample_1gb">示例 1 GB</string>
+    <string name="url_error_empty">先填一个链接</string>
+    <string name="url_error_https">请使用 https 链接</string>
+    <string name="url_error_invalid">这个链接不能用</string>
+    <string name="url_error_exists">这条链接已经添加过</string>
+    <string name="action_pause">暂停</string>
+    <string name="action_start">开始</string>
+    <string name="action_delete">删除</string>
+    <string name="action_open">打开</string>
+
+    <string name="files_title">文件</string>
+    <string name="files_subtitle">只展示下载好的文件。点一下交给系统打开，长按删除。</string>
+    <string name="files_empty">还没有下完的文件</string>
+    <string name="files_today">今天</string>
+    <string name="files_yesterday">昨天</string>
+    <string name="file_missing">目录里已经找不到</string>
+    <string name="file_missing_short">找不到</string>
+    <string name="file_open_failed">系统里没有能打开它的应用</string>
+
+    <string name="delete_title">删除这个文件？</string>
+    <string name="delete_body">记录和已经写下的文件都会去掉。</string>
+    <string name="delete_confirm">删除</string>
+    <string name="delete_keep">留下</string>
+    <string name="download_progress">下载进度</string>
+
+    <string name="settings_title">设置</string>
+    <string name="settings_subtitle">主题、语言、配置，以及协议和版本。</string>
+    <string name="settings_theme">主题</string>
+    <string name="theme_dark">深色</string>
+    <string name="theme_light">浅色</string>
+    <string name="settings_language">语言</string>
+    <string name="settings_view_config">查看配置</string>
+    <string name="settings_view_config_body">同时下载、速度、网络和后台。</string>
+    <string name="settings_license">开源协议</string>
+    <string name="settings_license_body">以 Apache License 2.0 发布。</string>
+    <string name="settings_license_sheet">本示例及其源代码以 Apache License 2.0 提供。\n\n1. 许可\n在遵守该许可的前提下，你可以自由使用、修改和再分发本软件，并保留版权声明、许可文本，以及声明中列出的通知。\n\n2. 你的修改\n你基于本软件所作的修改、再分发或额外保证，由你自行负责，不代表其他贡献者。</string>
+    <string name="settings_terms">用户协议</string>
+    <string name="settings_terms_body">试用下载的示例，按现状提供。</string>
+    <string name="settings_terms_sheet">使用本应用即表示你理解并同意以下条款。\n\n1. 示例性质\n本应用用于演示下载，不构成持续提供的网络服务，也不提供账号、会员或付费功能。\n\n2. 你的使用\n你应自行确保下载地址合法，并有权获取相应内容。因下载、保存或使用第三方内容产生的责任，由你自行承担。\n\n3. 文件位置\n下载文件写入本应用的内部目录，只保存在这台设备上。卸载应用或清除数据后，这些文件会一并删除。\n\n4. 不保证下载结果\n下载可能因网络、网站、系统限制或文件本身而失败、中断，或得到不完整的结果。本应用不保证下载成功、速度、完整性或内容可用。\n\n5. 停止使用\n你可以随时停止使用并卸载本应用。条款如有调整，以应用内展示的文本为准。</string>
+    <string name="settings_privacy">隐私协议</string>
+    <string name="settings_privacy_body">不收集账号，数据留在这台设备上。</string>
+    <string name="settings_privacy_sheet">本应用不提供账号，也不把个人资料上传到开发者的服务器。\n\n1. 本机保存的内容\n主题、语言、下载任务和进度保存在这台设备上，用于记住你的选择，并继续未完成的下载。\n\n2. 网络请求\n你填写或点选的链接，只会发给该链接指向的网站，以便完成下载。本应用不另建账号，也不把这些链接汇总到开发者的服务器。\n\n3. 权限\n联网用于下载。有下载进行时，系统可能显示一条通知，用来保持下载并让你看到进度。通知只留在这台设备上。\n\n4. 诊断日志\n失败和重试会记入本机日志，便于排查。这些日志不上传。\n\n5. 其他应用和网站\n打开已下载的文件时，会交给这台设备上的其他应用。那些应用如何处理文件，适用它们自己的规则。你访问的网站也适用该网站自己的规则。</string>
+    <string name="settings_disclaimer">通用免责\n本应用按现状提供，不附带任何明示或默示的保证，包括适销性、特定用途适用性以及不侵权。在法律允许的最大范围内，开发者不就数据丢失、下载失败、设备损坏、第三方索赔，以及任何间接、附带、特殊或后果性损失承担责任。即使已被告知可能发生该等损害，此限制仍然适用。适用法律不允许排除责任时，以法律允许的最大范围为限。</string>
+    <string name="settings_version">当前版本</string>
+    <string name="action_back">返回</string>
+
+    <string name="config_title">配置</string>
+    <string name="config_subtitle">下载器当前配置</string>
+    <string name="config_section_info">查看%1$s说明</string>
+    <string name="action_got_it">知道了</string>
+
+    <string name="eta_seconds">剩余 %1$d 秒</string>
+    <string name="eta_minutes">剩余 %1$d 分 %2$d 秒</string>
+
+    <string name="status_added">已登记，还没开始</string>
+    <string name="status_queued">排队等待</string>
+    <string name="status_waiting_network">在等网络</string>
+    <string name="status_downloading">正在下载</string>
+    <string name="status_paused">已暂停</string>
+    <string name="status_completed">已完成</string>
+    <string name="status_failed">失败</string>
+    <string name="status_failed_detail">失败：%1$s</string>
+    <string name="status_cancelled">已取消</string>
+    <string name="status_removed">已移除</string>
+    <string name="status_deleted">已删除</string>
+
+    <string name="notify_not_required">这个系统不用单独允许通知</string>
+    <string name="notify_granted">已允许</string>
+    <string name="notify_denied">已拒绝，不再询问</string>
+    <string name="notify_will_ask">开始下载时会询问</string>
+
+    <string name="task_count">%1$d 条</string>
+    <string name="speed_unlimited">不限</string>
+    <string name="speed_128">128 KB/s</string>
+    <string name="speed_512">512 KB/s</string>
+    <string name="speed_2mb">2 MB/s</string>
+    <string name="speed_value">%1$s/s</string>
+    <string name="network_any">任何网络</string>
+    <string name="network_unmetered">不计流量</string>
+    <string name="network_wifi">只走 Wi-Fi</string>
+    <string name="network_unrestricted">不额外限制</string>
+    <string name="value_custom">自定义</string>
+    <string name="value_on">开</string>
+    <string name="value_off">关</string>
+
+    <string name="section_client">下载器</string>
+    <string name="section_client_body">当前用来请求网络的客户端。</string>
+    <string name="label_client">客户端</string>
+    <string name="client_platform">系统 HttpURLConnection</string>
+    <string name="client_okhttp">OkHttp</string>
+
+    <string name="section_queue">队列</string>
+    <string name="section_queue_body">同时最多 %1$d 条，多出来的会排队。%2$s</string>
+    <string name="queue_auto_continue">重新打开应用后，没下完的会自己继续。</string>
+    <string name="queue_manual_continue">重新打开应用后，需要手动继续。</string>
+    <string name="label_namespace">队列名字</string>
+    <string name="label_concurrent">同时下载</string>
+    <string name="label_auto_start">自动开始</string>
+    <string name="label_database">数据库</string>
+
+    <string name="section_network">速度和网络</string>
+    <string name="section_network_body">这两项对所有任务一起生效。单条任务还可以再加自己的限制。</string>
+    <string name="label_speed">速度上限</string>
+    <string name="label_network">网络</string>
+
+    <string name="section_files">文件</string>
+    <string name="section_files_body">文件在应用内部目录，不需要存储权限。先写临时文件，完成后再换成最终名字。</string>
+    <string name="label_blocks">分块</string>
+    <string name="label_temp">临时文件</string>
+    <string name="label_check">核对</string>
+    <string name="label_output">写出</string>
+    <string name="label_directory">目录</string>
+    <string name="blocks_adaptive">按大小分成 1 到 5 段</string>
+    <string name="blocks_single">始终一块</string>
+    <string name="temp_rename">先写临时文件再改名</string>
+    <string name="check_hash">完成前可以核对 SHA-256 或 MD5。任务没带摘要时不会做。</string>
+    <string name="output_internal">应用内部目录</string>
+
+    <string name="section_background">后台</string>
+    <string name="label_mode">方式</string>
+    <string name="label_keepalive">保活</string>
+    <string name="label_notification">通知</string>
+    <string name="label_monitor">指标</string>
+    <string name="background_foreground">前台通知</string>
+    <string name="background_work">WorkManager</string>
+    <string name="background_in_process">只在进程内</string>
+    <string name="keepalive_foreground">前台服务，系统拒绝时改走 WorkManager</string>
+    <string name="keepalive_in_process">进程内计数</string>
+    <string name="monitor_log">诊断日志</string>
+    <string name="monitor_memory">只记在内存</string>
+    <string name="keep_body_foreground">有下载时显示一条通知。系统如果不允许前台服务，会改用 WorkManager。进程被杀掉后不会自动接着下，下次打开从上次的进度继续。</string>
+    <string name="keep_body_work">有下载时交给 WorkManager。进程被杀掉后不会自动接着下，下次打开从上次的进度继续。</string>
+    <string name="keep_body_in_process">只在当前进程里下载。离开应用后系统可能把它停掉。下次打开从上次的进度继续。</string>
 </resources>

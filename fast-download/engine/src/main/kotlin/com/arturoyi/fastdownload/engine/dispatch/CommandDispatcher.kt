@@ -481,6 +481,8 @@ public class CommandDispatcher(
         }
         val id = identity(request)
         val existing = repository.get(id) ?: return insertNew(id, request)
+        // 删除会留下同一条标识。这条记录不再占着链接，重新登记一份。
+        if (existing.status == Status.DELETED) return replaceExisting(existing, request)
         return when (request.enqueueAction) {
             EnqueueAction.DO_NOT_ENQUEUE_IF_EXISTING -> id
             EnqueueAction.UPDATE_ACCORDINGLY -> updateExisting(existing, request)

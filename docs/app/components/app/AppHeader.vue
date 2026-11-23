@@ -5,10 +5,14 @@ const { forced: forcedColorMode } = useDocusColorMode()
 
 const githubUrl = 'https://github.com/ArturoYi/fast-prism'
 const isHome = computed(() => route.path === localePath('/'))
-const { active: sdkDoc, navigation: sdkNavigation } = await useSdkDoc()
+const { active: sdkDoc, navigation: sdkNavigation } = useSdkDoc()
 </script>
 
 <template>
+  <ClientOnly>
+    <DocsRouteLoader />
+  </ClientOnly>
+
   <UHeader
     :toggle="!isHome"
     :ui="{ center: 'flex-1' }"

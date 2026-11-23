@@ -15,9 +15,9 @@ useSeoMeta({
     <ClientOnly>
       <SdkCatalog />
       <template #fallback>
-        <p class="sdk-page__wait">
-          正在加载
-        </p>
+        <div class="sdk-page__loading">
+          <DocsLoader label="正在加载" />
+        </div>
       </template>
     </ClientOnly>
   </div>
@@ -29,11 +29,10 @@ useSeoMeta({
   overflow: hidden;
 }
 
-.sdk-page__wait {
-  margin: 0;
-  padding: 32px 48px;
-  color: var(--ui-text-toned);
-  font-size: 16px;
-  line-height: 24px;
+.sdk-page__loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
 }
 </style>

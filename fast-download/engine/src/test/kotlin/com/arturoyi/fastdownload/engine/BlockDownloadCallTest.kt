@@ -21,6 +21,9 @@ import com.arturoyi.fastdownload.testing.ChunkedResourceDispatcher
 import com.arturoyi.fastdownload.testing.MockDownloadServerRule
 import com.arturoyi.fastdownload.testing.RangedResourceDispatcher
 import com.arturoyi.fastdownload.testing.patternedBody
+import mockwebserver3.Dispatcher
+import mockwebserver3.MockResponse
+import mockwebserver3.RecordedRequest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertInstanceOf
@@ -32,6 +35,7 @@ import java.nio.file.Files
 import java.security.MessageDigest
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 
 /**
@@ -70,6 +74,53 @@ class BlockDownloadCallTest {
         assertTrue(progress.zipWithNext().all { (previous, next) -> next >= previous })
         val ranged = (0 until server.server.requestCount).map { server.server.takeRequest() }
         assertEquals(4, ranged.count { it.headers["Range"] != null && it.headers["Range"] != "bytes=0-0" })
+    }
+
+    /**
+     * 并行分块收到 429 后，等 `Retry-After`，再一条连接把剩下的块写完。
+     */
+    @Test
+    fun tooManyRequestsContinuesOnOneConnection() {
+        val body = patternedBody(64 * 1024)
+        val gate = RangeGate(body, rejectCount = 4)
+        server.server.dispatcher = gate
+        val root = tempRoot()
+        val result = BlockDownloadCall(
+            request(root, connectionCount = 4),
+            root,
+            InMemoryBreakpointStore(),
+        ).execute()
+
+        val success = assertInstanceOf(DownloadResult.Success::class.java, result)
+        assertEquals(body.size.toLong(), success.bytesWritten)
+        assertEquals(sha256(body), sha256(file(root).readBytes()))
+        assertEquals(4, gate.rejected.get())
+        assertEquals(1, gate.maxAcceptedFlight.get())
+    }
+
+    /**
+     * 同一条任务第一次被 429 拒绝后，这次进程里再次下载不再并行。
+     */
+    @Test
+    fun tooManyRequestsStaysSingleConnectionForTheSameTask() {
+        val body = patternedBody(64 * 1024)
+        val gate = RangeGate(body, rejectCount = Int.MAX_VALUE)
+        server.server.dispatcher = gate
+        val root = tempRoot()
+        val store = InMemoryBreakpointStore()
+        val request = request(root, connectionCount = 4)
+        val first = BlockDownloadCall(request, root, store).execute()
+
+        val failure = assertInstanceOf(DownloadResult.Failure::class.java, first)
+        assertEquals(429, failure.error.httpCode)
+
+        gate.rejectCount = 0
+        gate.maxAcceptedFlight.set(0)
+        val second = BlockDownloadCall(request, root, store).execute()
+        val success = assertInstanceOf(DownloadResult.Success::class.java, second)
+        assertEquals(body.size.toLong(), success.bytesWritten)
+        assertEquals(sha256(body), sha256(file(root).readBytes()))
+        assertEquals(1, gate.maxAcceptedFlight.get())
     }
 
     /**
@@ -470,6 +521,50 @@ class BlockDownloadCallTest {
 private fun sha256(bytes: ByteArray): String {
     val digest = MessageDigest.getInstance("SHA-256").digest(bytes)
     return digest.joinToString(separator = "") { byte -> "%02x".format(byte.toInt() and 0xff) }
+}
+
+/**
+ * 前 [rejectCount] 个真正的区间请求返回 429，其余按资源切片返回 206。
+ *
+ * 试连的 `bytes=0-0` 始终放行。接受的请求只统计同时停在 [dispatch] 里的数量。
+ *
+ * @param body 完整资源。
+ * @param rejectCount 要拒绝的区间请求数。测试中途可以改成 0。
+ */
+private class RangeGate(
+    body: ByteArray,
+    @Volatile var rejectCount: Int,
+) : Dispatcher() {
+    private val inner = RangedResourceDispatcher(body)
+    private val dataRequests = AtomicInteger()
+    private val acceptedFlight = AtomicInteger()
+
+    /** 已经返回 429 的区间请求数。 */
+    val rejected = AtomicInteger()
+
+    /** 同时被接受的区间请求数的峰值。 */
+    val maxAcceptedFlight = AtomicInteger()
+
+    override fun dispatch(request: RecordedRequest): MockResponse {
+        val range = request.headers["Range"]
+        if (request.method == "HEAD" || range == null || range.trim() == "bytes=0-0") {
+            return inner.dispatch(request)
+        }
+        if (dataRequests.incrementAndGet() <= rejectCount) {
+            rejected.incrementAndGet()
+            return MockResponse.Builder()
+                .code(429)
+                .setHeader("Retry-After", "0")
+                .build()
+        }
+        val flight = acceptedFlight.incrementAndGet()
+        maxAcceptedFlight.updateAndGet { current -> maxOf(current, flight) }
+        return try {
+            inner.dispatch(request)
+        } finally {
+            acceptedFlight.decrementAndGet()
+        }
+    }
 }
 
 /**

@@ -1,189 +1,77 @@
 /**
- * 三行接入：初始化在 [SampleApp]，这里组请求并入队。
+ * 演示页。底部三个页签：下载、文件、设置。
+ *
+ * 开始下载时请求通知权限。用户拒绝过就不再问。
+ * 状态栏跟着主题走，默认是深色。
  *
  * @file
  */
 package com.arturoyi.fastdownload.sample
 
+import android.os.Build
 import android.os.Bundle
-import android.widget.Button
-import android.widget.LinearLayout
-import android.widget.ProgressBar
-import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
-import androidx.core.view.WindowCompat
-import com.arturoyi.fastdownload.api.FastDownloader
-import com.arturoyi.fastdownload.api.SimpleDownloadListener
-import com.arturoyi.fastdownload.api.SnapshotListener
-import com.arturoyi.fastdownload.api.downloadRequest
-import com.arturoyi.fastdownload.core.model.DownloadRecord
-import com.arturoyi.fastdownload.core.model.Progress
-import com.arturoyi.fastdownload.core.state.Status
-import java.io.File
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import com.arturoyi.fastdownload.sample.futures.home.DemoScreen
+import com.arturoyi.fastdownload.sample.settings.AppTheme
+import com.arturoyi.fastdownload.sample.theme.SampleTheme
+import com.arturoyi.fastdownload.sample.theme.syncSampleBars
 
 /**
- * 样本页：开始下载，并列出已经保存在数据库里的任务。
- *
- * 文件写到 `filesDir`。界面只用黑白灰，按钮高度 48dp。
+ * 用一个 OkHttp 下载器演示入队、查看配置和已完成文件。
  */
-class MainActivity : AppCompatActivity() {
-    private var records: List<DownloadRecord> = emptyList()
-    private val live = HashMap<String, Progress>()
-    private var snapshots: SnapshotListener? = null
-    private var progressListener: SimpleDownloadListener? = null
-
+class MainActivity : ComponentActivity() {
     /**
-     * 画出按钮、进度和任务列表。
+     * 画出三个页，并接上通知权限弹窗。
      *
-     * @param savedInstanceState 系统保存的视图状态。任务列表来自数据库。
+     * @param savedInstanceState 系统保存的页签。任务来自数据库。
      */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-        val background = ContextCompat.getColor(this, R.color.background)
-        window.statusBarColor = background
-        window.navigationBarColor = background
-        val insets = WindowCompat.getInsetsController(window, window.decorView)
-        insets.isAppearanceLightStatusBars = true
-        insets.isAppearanceLightNavigationBars = true
-        findViewById<Button>(R.id.download).setOnClickListener { enqueue() }
-    }
-
-    /**
-     * 开始在主线程接收任务列表和进度。
-     */
-    override fun onStart() {
-        super.onStart()
-        val downloader = FastDownloader.getDefault()
-        val snapshotListener = SnapshotListener { latest ->
-            records = latest
-            render()
+        val dark = (application as SampleApp).settings.theme == AppTheme.Dark
+        syncSampleBars(dark)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            window.decorView.isForceDarkAllowed = false
         }
-        val progress = object : SimpleDownloadListener() {
-            override fun onProgress(record: DownloadRecord, progress: Progress) {
-                live[record.id] = progress
-                render()
+        val notifications = NotificationPrompt(applicationContext)
+        setContent {
+            var permissionRevision by remember { mutableIntStateOf(0) }
+            val launcher = rememberLauncherForActivityResult(
+                ActivityResultContracts.RequestPermission(),
+            ) { granted ->
+                notifications.onResult(granted)
             }
-        }
-        snapshots = snapshotListener
-        progressListener = progress
-        downloader.addSnapshotListener(this, snapshotListener)
-        downloader.addListener(progress, this)
-    }
-
-    /**
-     * 页面不可见时摘掉监听，避免同一次页面生命周期里重复登记。
-     */
-    override fun onStop() {
-        val downloader = FastDownloader.getDefault()
-        snapshots?.let(downloader::removeSnapshotListener)
-        progressListener?.let(downloader::removeListener)
-        snapshots = null
-        progressListener = null
-        super.onStop()
-    }
-
-    /**
-     * 把示例地址放进队列。
-     */
-    private fun enqueue() {
-        val relative = getString(R.string.demo_relative_path)
-        val slash = relative.lastIndexOf('/')
-        val directory = if (slash < 0) "" else relative.substring(0, slash)
-        val fileName = if (slash < 0) relative else relative.substring(slash + 1)
-        val id = FastDownloader.getDefault().tasks.enqueue(
-            downloadRequest(getString(R.string.demo_url)) {
-                saveTo(directory, fileName)
-            },
-        )
-        findViewById<TextView>(R.id.path).text = id
-    }
-
-    /**
-     * 用最新任务刷新进度，并重画列表。
-     */
-    private fun render() {
-        val current = records.firstOrNull { it.status == Status.DOWNLOADING }
-            ?: records.maxByOrNull { it.updatedAt }
-        val progress = findViewById<ProgressBar>(R.id.progress)
-        val status = findViewById<TextView>(R.id.status)
-        val path = findViewById<TextView>(R.id.path)
-        findViewById<Button>(R.id.download).setText(
-            if (current?.status == Status.DOWNLOADING) {
-                R.string.action_downloading
-            } else {
-                R.string.action_download
-            },
-        )
-        if (current == null) {
-            progress.progress = 0
-            status.setText(R.string.status_idle)
-            path.setText(R.string.path_idle)
-        } else {
-            val shown = live[current.id]
-            val downloaded = shown?.downloadedBytes ?: current.downloadedBytes
-            val total = shown?.totalBytes ?: current.totalBytes
-            progress.progress = if (total > 0L) ((downloaded * 1000L) / total).toInt() else 0
-            status.text = if (current.status == Status.COMPLETED) {
-                getString(R.string.status_done, downloaded.toInt())
-            } else if (current.status == Status.FAILED) {
-                getString(R.string.status_failed, current.error?.message ?: "")
-            } else if (total > 0L) {
-                getString(R.string.progress_known, downloaded.toInt(), total.toInt())
-            } else {
-                getString(R.string.progress_unknown, downloaded.toInt())
+            val activity = this@MainActivity
+            DisposableEffect(activity) {
+                notifications.launch = {
+                    launcher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                }
+                notifications.onChanged = { permissionRevision++ }
+                val observer = LifecycleEventObserver { _, event ->
+                    if (event == Lifecycle.Event.ON_RESUME) notifications.refresh()
+                }
+                activity.lifecycle.addObserver(observer)
+                onDispose {
+                    activity.lifecycle.removeObserver(observer)
+                    notifications.launch = null
+                    notifications.onChanged = null
+                }
             }
-            path.text = File(filesDir, current.request.destination.relativePath).absolutePath
-        }
-        val list = findViewById<LinearLayout>(R.id.tasks)
-        list.removeAllViews()
-        if (records.isEmpty()) {
-            list.addView(label(getString(R.string.tasks_empty), muted = true))
-            return
-        }
-        records.forEach { record ->
-            list.addView(
-                label(getString(R.string.task_row, statusName(record.status), record.request.url), muted = false),
-            )
-        }
-    }
-
-    /**
-     * 做一行列表文字。
-     *
-     * @param text 要显示的内容。
-     * @param muted 为 true 时用次要灰色。
-     * @return 至少 48dp 高的文本行。
-     */
-    private fun label(text: String, muted: Boolean): TextView {
-        return TextView(this).apply {
-            this.text = text
-            textSize = 16f
-            minHeight = (48 * resources.displayMetrics.density).toInt()
-            setTextColor(ContextCompat.getColor(this@MainActivity, if (muted) R.color.muted else R.color.ink))
-            setPadding(0, (8 * resources.displayMetrics.density).toInt(), 0, (8 * resources.displayMetrics.density).toInt())
-        }
-    }
-
-    /**
-     * 把状态显示成中文。
-     *
-     * @param status 任务状态。
-     * @return 界面上的短名称。
-     */
-    private fun statusName(status: Status): String {
-        return when (status) {
-            Status.ADDED -> "已登记"
-            Status.QUEUED -> "排队"
-            Status.WAITING_NETWORK -> "等网络"
-            Status.DOWNLOADING -> "下载中"
-            Status.PAUSED -> "已暂停"
-            Status.COMPLETED -> "完成"
-            Status.FAILED -> "失败"
-            Status.CANCELLED -> "已取消"
-            Status.REMOVED -> "已移除"
-            Status.DELETED -> "已删除"
+            SampleTheme {
+                DemoScreen(
+                    notifications = notifications,
+                    permissionRevision = permissionRevision,
+                )
+            }
         }
     }
 }

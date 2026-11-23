@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Album Cleaner</string>
+
+    <string name="tab_clean">Clean</string>
+    <string name="tab_groups">Groups</string>
+    <string name="tab_settings">Settings</string>
+
+    <string name="clean_title">Clean</string>
+    <string name="clean_subtitle">Finds duplicates and weak shots. The first scan starts only when you tap the button.</string>
+    <string name="space_caption">About to free</string>
+    <string name="candidate_count">%1$d can be deleted</string>
+    <string name="applied">Already freed %1$s</string>
+    <string name="loading_index">Reading the last result</string>
+
+    <string name="action_start">Start scan</string>
+    <string name="action_resume">Continue scan</string>
+    <string name="action_rescan">Scan again</string>
+    <string name="action_cancel">Cancel scan</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_restore">Restore</string>
+    <string name="action_load_more">Load more</string>
+    <string name="action_back">Back</string>
+
+    <string name="empty_never">Tap the button to start the first scan</string>
+    <string name="empty_partial">The scan is not finished. Tap the button to continue.</string>
+    <string name="empty_none">Nothing to delete from this scan</string>
+    <string name="empty_groups">Similar photos show up here after a scan</string>
+    <string name="empty_partial_groups">The scan is not finished. Continue it from Clean.</string>
+    <string name="empty_groups_none">This scan did not form any groups</string>
+    <string name="empty_recycle">Recycle bin is empty</string>
+    <string name="empty_recycle_wait">Deleted photos can be restored here</string>
+
+    <string name="permission_needed">Allow photo access before scanning</string>
+    <string name="permission_granted">Photo access allowed</string>
+    <string name="permission_missing">Photo access is off</string>
+    <string name="scan_cancelled">Scan cancelled</string>
+    <string name="scan_progress">Scan progress</string>
+    <string name="index_broken">The photo index could not be opened</string>
+    <string name="action_failed">That step did not finish</string>
+    <string name="photo_missing">That photo is no longer in the library</string>
+    <string name="restore_unavailable">This deletion cannot be restored</string>
+
+    <string name="reason_exact">Exact duplicate</string>
+    <string name="reason_near">Looks almost the same</string>
+    <string name="reason_blurry">Blurry</string>
+    <string name="reason_small">Too small</string>
+    <string name="reason_over">Overexposed</string>
+    <string name="reason_under">Underexposed</string>
+    <string name="reason_screenshot">Screenshot</string>
+    <string name="reason_cache">Cache image</string>
+    <string name="reason_semantic">Similar subject</string>
+    <string name="reason_unknown">Suggested delete</string>
+    <string name="reason_separator">, </string>
+    <string name="candidate_detail">Keep #%1$d · %2$s</string>
+
+    <string name="group_exact">Exact match</string>
+    <string name="group_near">Looks almost the same</string>
+    <string name="group_burst">Burst</string>
+    <string name="group_quality">Low quality</string>
+    <string name="group_screenshot">Screenshot</string>
+    <string name="group_semantic">Similar subject</string>
+    <string name="group_detail">%1$d photos · %2$s</string>
+
+    <string name="phase_query">Reading the library</string>
+    <string name="phase_index">Writing the index</string>
+    <string name="phase_fingerprint">Computing features</string>
+    <string name="phase_dedup">Grouping</string>
+    <string name="phase_score">Choosing what to keep</string>
+    <string name="phase_done">Scan finished</string>
+
+    <string name="delete_title">Delete this photo?</string>
+    <string name="delete_body_trash">The system will ask again. On Android 11 and later it can be restored.</string>
+    <string name="delete_body_gone">This cannot be undone.</string>
+    <string name="delete_confirm">Delete</string>
+    <string name="delete_keep">Keep</string>
+
+    <string name="groups_title">Groups</string>
+    <string name="groups_subtitle">Each group keeps one photo. Delete the others from Clean.</string>
+
+    <string name="recycle_title">Recycle bin</string>
+    <string name="recycle_subtitle">Deleted photos that can still be restored.</string>
+    <string name="recycle_batch">%1$d photos</string>
+    <string name="recycle_until">Kept until %1$s</string>
+    <string name="recycle_restored">Restored</string>
+
+    <string name="settings_title">Settings</string>
+    <string name="settings_subtitle">Theme, language, and photo access. Photos stay on this device.</string>
+    <string name="settings_theme">Theme</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_light">Light</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_recycle">Recycle bin</string>
+    <string name="settings_recycle_body">Photos that can still be restored.</string>
+    <string name="settings_permission">Photo access</string>
+    <string name="settings_version">Version</string>
+</resources>

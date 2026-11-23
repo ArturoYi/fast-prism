@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">FastDownload</string>
+
+    <string name="tab_downloads">Downloads</string>
+    <string name="tab_files">Files</string>
+    <string name="tab_settings">Settings</string>
+
+    <string name="downloads_title">Downloads</string>
+    <string name="downloads_subtitle">Paste an https link. Unfinished downloads stay here.</string>
+    <string name="downloads_subtitle_sample">Paste an https link, or tap a sample. Unfinished downloads stay here.</string>
+    <string name="url_label">Link</string>
+    <string name="url_placeholder">https://</string>
+    <string name="action_add">Add</string>
+    <string name="downloads_empty">Nothing downloading</string>
+    <string name="sample_1gb">Sample 1 GB</string>
+    <string name="url_error_empty">Enter a link first</string>
+    <string name="url_error_https">Use an https link</string>
+    <string name="url_error_invalid">This link cannot be used</string>
+    <string name="url_error_exists">This link is already added</string>
+    <string name="action_pause">Pause</string>
+    <string name="action_start">Start</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_open">Open</string>
+
+    <string name="files_title">Files</string>
+    <string name="files_subtitle">Grouped by day. Tap to open with another app. Press and hold to delete.</string>
+    <string name="files_empty">No finished files yet</string>
+    <string name="files_today">Today</string>
+    <string name="files_yesterday">Yesterday</string>
+    <string name="file_missing">The file is no longer in the folder</string>
+    <string name="file_missing_short">Missing</string>
+    <string name="file_open_failed">No app on this device can open it</string>
+
+    <string name="delete_title">Delete this file?</string>
+    <string name="delete_body">The record and the saved file will both be removed.</string>
+    <string name="delete_confirm">Delete</string>
+    <string name="delete_keep">Keep</string>
+    <string name="download_progress">Download progress</string>
+
+    <string name="settings_title">Settings</string>
+    <string name="settings_subtitle">Theme, language, configuration, policies, and version.</string>
+    <string name="settings_theme">Theme</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_light">Light</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_view_config">View configuration</string>
+    <string name="settings_view_config_body">Concurrency, speed, network, and background.</string>
+    <string name="settings_license">Open source license</string>
+    <string name="settings_license_body">Released under the Apache License 2.0.</string>
+    <string name="settings_license_sheet">This sample and its source code are provided under the Apache License 2.0.\n\n1. Permission\nYou may use, modify, and redistribute this software if you keep the copyright notice, the license text, and the notices listed in that license.\n\n2. Your changes\nChanges, redistribution, or extra warranties you offer are your own responsibility. They are not made on behalf of any other contributor.</string>
+    <string name="settings_terms">User agreement</string>
+    <string name="settings_terms_body">A sample for trying downloads, provided as is.</string>
+    <string name="settings_terms_sheet">By using this app, you agree to the terms below.\n\n1. What this is\nThe app demonstrates downloading. It is not an ongoing online service. It does not offer an account, membership, or paid feature.\n\n2. Your use\nYou are responsible for making sure a download address is lawful and that you may obtain the content. You are responsible for downloading, storing, and using content from other sites.\n\n3. Where files go\nDownloaded files are written into the private folder of this app and stay on this device. Uninstalling the app or clearing its data also removes those files.\n\n4. No guarantee of a download\nA download may fail, stop, or finish incomplete because of the network, the site, the system, or the file itself. The app does not guarantee success, speed, completeness, or that the content will be usable.\n\n5. Stopping\nYou may stop using the app and uninstall it at any time. If these terms change, the text shown in the app is the one that applies.</string>
+    <string name="settings_privacy">Privacy policy</string>
+    <string name="settings_privacy_body">No account is collected. Data stays on this device.</string>
+    <string name="settings_privacy_sheet">This app does not offer an account, and it does not upload a profile about you to a developer server.\n\n1. Stored on this device\nTheme, language, download tasks, and progress are stored on this device so the app can remember your choices and resume unfinished downloads.\n\n2. Network requests\nA link you enter or tap is sent only to the site that link points to, so the download can finish. The app does not create an account, and it does not collect those links on a developer server.\n\n3. Permissions\nInternet access is used for downloads. While a download is running, the system may show one notification so the download can continue and you can see progress. The notification stays on this device.\n\n4. Diagnostic logs\nFailures and retries are written to logs on this device to help with troubleshooting. Those logs are not uploaded.\n\n5. Other apps and sites\nOpening a finished file hands it to another app on this device. How that app handles the file follows its own rules. A site you visit follows its own rules.</string>
+    <string name="settings_disclaimer">General disclaimer\nThe app is provided as is, without any warranty, express or implied, including merchantability, fitness for a particular purpose, and non-infringement. To the maximum extent the law allows, the developers are not liable for lost data, failed downloads, device damage, claims from other parties, or any indirect, incidental, special, or consequential loss. This limit applies even if they were told that such damage was possible. Where the law does not allow that exclusion, liability is limited to the maximum extent the law allows.</string>
+    <string name="settings_version">Version</string>
+    <string name="action_back">Back</string>
+
+    <string name="config_title">Configuration</string>
+    <string name="config_subtitle">Current downloader configuration</string>
+    <string name="config_section_info">Notes about %1$s</string>
+    <string name="action_got_it">OK</string>
+
+    <string name="eta_seconds">%1$d s left</string>
+    <string name="eta_minutes">%1$d min %2$d s left</string>
+
+    <string name="status_added">Added, not started</string>
+    <string name="status_queued">Waiting in queue</string>
+    <string name="status_waiting_network">Waiting for network</string>
+    <string name="status_downloading">Downloading</string>
+    <string name="status_paused">Paused</string>
+    <string name="status_completed">Finished</string>
+    <string name="status_failed">Failed</string>
+    <string name="status_failed_detail">Failed: %1$s</string>
+    <string name="status_cancelled">Cancelled</string>
+    <string name="status_removed">Removed</string>
+    <string name="status_deleted">Deleted</string>
+
+    <string name="notify_not_required">This system does not ask for notification permission</string>
+    <string name="notify_granted">Allowed</string>
+    <string name="notify_denied">Denied, and will not ask again</string>
+    <string name="notify_will_ask">Asked when a download starts</string>
+
+    <string name="task_count">%1$d</string>
+    <string name="speed_unlimited">Unlimited</string>
+    <string name="speed_128">128 KB/s</string>
+    <string name="speed_512">512 KB/s</string>
+    <string name="speed_2mb">2 MB/s</string>
+    <string name="speed_value">%1$s/s</string>
+    <string name="network_any">Any network</string>
+    <string name="network_unmetered">Unmetered</string>
+    <string name="network_wifi">Wi-Fi only</string>
+    <string name="network_unrestricted">No extra limit</string>
+    <string name="value_custom">Custom</string>
+    <string name="value_on">On</string>
+    <string name="value_off">Off</string>
+
+    <string name="section_client">Downloader</string>
+    <string name="section_client_body">The HTTP client used for requests.</string>
+    <string name="label_client">Client</string>
+    <string name="client_platform">HttpURLConnection</string>
+    <string name="client_okhttp">OkHttp</string>
+
+    <string name="section_queue">Queue</string>
+    <string name="section_queue_body">Up to %1$d at once. Anything beyond that waits. %2$s</string>
+    <string name="queue_auto_continue">Unfinished downloads continue after you reopen the app.</string>
+    <string name="queue_manual_continue">After you reopen the app, continue them yourself.</string>
+    <string name="label_namespace">Queue name</string>
+    <string name="label_concurrent">At once</string>
+    <string name="label_auto_start">Auto start</string>
+    <string name="label_database">Database</string>
+
+    <string name="section_network">Speed and network</string>
+    <string name="section_network_body">These apply to every task. A single task can add its own limit.</string>
+    <string name="label_speed">Speed limit</string>
+    <string name="label_network">Network</string>
+
+    <string name="section_files">Files</string>
+    <string name="section_files_body">Files stay in the app private folder, so storage permission is not required. A temporary file is renamed when the download finishes.</string>
+    <string name="label_blocks">Blocks</string>
+    <string name="label_temp">Temporary file</string>
+    <string name="label_check">Check</string>
+    <string name="label_output">Output</string>
+    <string name="label_directory">Folder</string>
+    <string name="blocks_adaptive">Split into 1 to 5 blocks by size</string>
+    <string name="blocks_single">Always one block</string>
+    <string name="temp_rename">Write a temporary file, then rename it</string>
+    <string name="check_hash">SHA-256 or MD5 can be checked before finishing. Skipped when the task has no checksum.</string>
+    <string name="output_internal">App private folder</string>
+
+    <string name="section_background">Background</string>
+    <string name="label_mode">Mode</string>
+    <string name="label_keepalive">Keep alive</string>
+    <string name="label_notification">Notification</string>
+    <string name="label_monitor">Metrics</string>
+    <string name="background_foreground">Foreground notification</string>
+    <string name="background_work">WorkManager</string>
+    <string name="background_in_process">In this process only</string>
+    <string name="keepalive_foreground">Foreground service, or WorkManager if the system refuses</string>
+    <string name="keepalive_in_process">In-process count</string>
+    <string name="monitor_log">Diagnostic log</string>
+    <string name="monitor_memory">Memory only</string>
+    <string name="keep_body_foreground">A notification is shown while downloading. If the system refuses a foreground service, WorkManager is used instead. A killed process does not resume on its own; the next launch continues from the last progress.</string>
+    <string name="keep_body_work">Downloads are handed to WorkManager. A killed process does not resume on its own; the next launch continues from the last progress.</string>
+    <string name="keep_body_in_process">Downloads run only in this process. Leaving the app may stop them. The next launch continues from the last progress.</string>
+</resources>

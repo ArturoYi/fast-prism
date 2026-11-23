@@ -2,6 +2,7 @@
  * 按试连结果做单块或分块下载。
  *
  * 不提供暂停、取消或停止。某个分块失败时，其余分块停止读取。
+ * 分块请求收到 429 时，只停掉这一轮其它连接，等 `Retry-After` 后改为单连接写完。这个信号不和取消共用。
  *
  * @file
  */
@@ -46,6 +47,9 @@ import java.io.File
 import java.io.IOException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicLong
@@ -281,6 +285,9 @@ public class BlockDownloadCall(
     /**
      * 写下每个未完成的分块。多个分块各用一个文件句柄。
      *
+     * 这一轮收到 429 时，不拨动 [stop]。已写入的分块保留，等 `Retry-After` 后逐块写完。
+     * 同一条任务在这次进程里再次开始时，直接走单连接。
+     *
      * @param part 已经预分配的临时文件。
      * @param blocks 覆盖整个资源的分块。
      * @param total 资源总长度。
@@ -294,10 +301,44 @@ public class BlockDownloadCall(
         useRanges: Boolean,
         fingerprint: ContentFingerprint,
     ) {
-        val token = stop
+        if (taskId in serialDownloads) {
+            writeSerially(part, total, useRanges, fingerprint)
+            return
+        }
+        val limited = writeInParallel(part, blocks, total, useRanges, fingerprint)
+        if (limited != null) serialDownloads.add(taskId)
+        if (limited == null || stop.isInterrupted()) return
+        logger.info("HTTP 429，改为单连接")
+        waitForRetry(limited.retryAfterMs)
+        if (stop.isInterrupted()) return
+        writeSerially(part, total, useRanges, fingerprint)
+    }
+
+    /**
+     * 并行写下 [blocks] 里还没完成的分块。
+     *
+     * 这一轮使用单独的停止信号。用户取消仍看 [stop]，它置位时这一轮也会停。
+     * 429 只停这一轮。其它失败仍拨动 [stop]，和原来的失败传播一致。
+     *
+     * @param part 已经预分配的临时文件。
+     * @param blocks 覆盖整个资源的分块。
+     * @param total 资源总长度。
+     * @param useRanges 是否发送区间请求。
+     * @param fingerprint 用来生成条件头。
+     * @return 这一轮因 429 停下时，带上要等待的时间。写完或被取消时为 null。
+     */
+    private fun writeInParallel(
+        part: File,
+        blocks: List<DownloadBlock>,
+        total: Long,
+        useRanges: Boolean,
+        fingerprint: ContentFingerprint,
+    ): RateLimited? {
+        val wave = InterruptToken()
+        stop.onInterrupt { wave.interrupt() }
         val failure = AtomicReference<Throwable>()
         val committed = AtomicLong(store.downloaded(taskId))
-        val writer = BlockWriter(token, request.bufferSize)
+        val writer = BlockWriter(wave, request.bufferSize)
         listener.onProgress(committed.get(), total)
         val pool = Executors.newFixedThreadPool(blocks.size.coerceAtLeast(1)) { runnable ->
             Thread(runnable, "fast-download-block").apply { isDaemon = true }
@@ -306,15 +347,15 @@ public class BlockDownloadCall(
             val futures = blocks.map { block ->
                 pool.submit {
                     try {
-                        if (!block.isDone) {
-                            writeOne(part, block, writer, token, committed, total, useRanges, fingerprint)
+                        if (!wave.isInterrupted() && !block.isDone) {
+                            writeOne(part, block, writer, wave, committed, total, useRanges, fingerprint)
                         }
                     } catch (crash: CrashInjection) {
-                        token.interrupt()
+                        stop.interrupt()
                         throw crash
                     } catch (error: Throwable) {
-                        failure.compareAndSet(null, error)
-                        token.interrupt()
+                        noteFailure(failure, error)
+                        if (error is RateLimited) wave.interrupt() else stop.interrupt()
                     }
                 }
             }
@@ -329,9 +370,152 @@ public class BlockDownloadCall(
         } finally {
             pool.shutdownNow()
         }
-        val thrown = failure.get() ?: return
+        val thrown = failure.get() ?: return null
+        if (thrown is RateLimited) return thrown
         if (thrown is BlockFailed) throw thrown
         throw thrown
+    }
+
+    /**
+     * 按存储里的当前偏移，一次写一个未完成的分块。
+     *
+     * 进入前会先提交合并窗口里的偏移，避免把已经写下的字节再请求一遍。
+     * 同一个分块连续收到 429 时，等待后重试，次数用 [Defaults.MAX_RETRY_ATTEMPTS]。
+     *
+     * @param part 已经预分配的临时文件。
+     * @param total 资源总长度。
+     * @param useRanges 是否发送区间请求。
+     * @param fingerprint 用来生成条件头。
+     */
+    private fun writeSerially(
+        part: File,
+        total: Long,
+        useRanges: Boolean,
+        fingerprint: ContentFingerprint,
+    ) {
+        val writer = BlockWriter(stop, request.bufferSize)
+        remit().forceFlush()
+        val committed = AtomicLong(store.downloaded(taskId))
+        listener.onProgress(committed.get(), total)
+        val pending = store.blocksOf(taskId).filter { !it.isDone }
+        for (block in pending) {
+            if (stop.isInterrupted()) return
+            writeUntilAccepted(part, block, writer, committed, total, useRanges, fingerprint)
+        }
+    }
+
+    /**
+     * 把 [block] 的剩余区间写完。收到 429 时等待后用同一段偏移再试。
+     *
+     * @param part 临时文件。
+     * @param block 开始写入时的分块快照。429 发生在写入之前，这段偏移仍然有效。
+     * @param writer 读取和切段。绑定调用方的停止信号。
+     * @param committed 所有分块已经提交的字节数。
+     * @param total 资源总长度，用来报告进度。
+     * @param useRanges 是否带 `Range`。
+     * @param fingerprint 条件头用的标签和修改时间。
+     */
+    private fun writeUntilAccepted(
+        part: File,
+        block: DownloadBlock,
+        writer: BlockWriter,
+        committed: AtomicLong,
+        total: Long,
+        useRanges: Boolean,
+        fingerprint: ContentFingerprint,
+    ) {
+        var strikes = 0
+        while (!stop.isInterrupted()) {
+            try {
+                writeOne(part, block, writer, stop, committed, total, useRanges, fingerprint)
+                return
+            } catch (limited: RateLimited) {
+                strikes += 1
+                if (strikes > Defaults.MAX_RETRY_ATTEMPTS) {
+                    throw BlockFailed(downloadError(ErrorCode.SERVER_CANCELED, "HTTP 429", httpCode = 429))
+                }
+                waitForRetry(limited.retryAfterMs)
+            }
+        }
+    }
+
+    /**
+     * 记住第一个失败。后到的 429 不覆盖已经记下的其它错误。
+     *
+     * @param failure 这一轮的第一个失败。
+     * @param error 刚从某个分块抛出的错误。
+     */
+    private fun noteFailure(failure: AtomicReference<Throwable>, error: Throwable) {
+        while (true) {
+            val current = failure.get()
+            val next = when {
+                current == null -> error
+                current is RateLimited && error !is RateLimited -> error
+                else -> return
+            }
+            if (failure.compareAndSet(current, next)) return
+        }
+    }
+
+    /**
+     * 等到 [delayMs] 结束，或 [stop] 被置位。
+     *
+     * 线程被中断时同样结束等待，并保留中断标记。
+     *
+     * @param delayMs 等待时间，单位毫秒。负数按 0。
+     */
+    private fun waitForRetry(delayMs: Long) {
+        val deadline = System.currentTimeMillis() + delayMs.coerceAtLeast(0L)
+        while (!stop.isInterrupted()) {
+            val remaining = deadline - System.currentTimeMillis()
+            if (remaining <= 0L) return
+            try {
+                Thread.sleep(minOf(remaining, 200L))
+            } catch (_: InterruptedException) {
+                Thread.currentThread().interrupt()
+                stop.interrupt()
+                return
+            }
+        }
+    }
+
+    /**
+     * 从 429 响应读出下一次请求前要等的时间。
+     *
+     * 数字按秒解释，HTTP 日期按距离现在的毫秒解释。没有这个头、或认不出时，用默认的第一次重试等待。
+     * 结果限制在 0 到 [MAX_RETRY_AFTER_MS]。
+     *
+     * @param response 状态码为 429 的响应。
+     * @return 等待时间，单位毫秒。
+     */
+    private fun retryAfterMillis(response: HttpResponse): Long {
+        val raw = response.headers.entries
+            .firstOrNull { (name, _) -> name.equals("Retry-After", ignoreCase = true) }
+            ?.value
+            ?.firstOrNull()
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+        val delay = when {
+            raw == null -> Defaults.RETRY_INITIAL_DELAY.inWholeMilliseconds
+            else -> retryDelayMs(raw)
+        }
+        return delay.coerceIn(0L, MAX_RETRY_AFTER_MS)
+    }
+
+    /**
+     * 把 `Retry-After` 的原文换成毫秒。
+     *
+     * @param raw 头字段原文。
+     * @return 未封顶的等待时间。认不出时用默认的第一次重试等待。
+     */
+    private fun retryDelayMs(raw: String): Long {
+        raw.toDoubleOrNull()?.takeIf { seconds -> seconds.isFinite() && seconds >= 0.0 }?.let { seconds ->
+            return (seconds * 1000.0).toLong()
+        }
+        val instant = runCatching {
+            ZonedDateTime.parse(raw, DateTimeFormatter.RFC_1123_DATE_TIME).toInstant()
+        }.getOrNull() ?: return Defaults.RETRY_INITIAL_DELAY.inWholeMilliseconds
+        return instant.toEpochMilli() - System.currentTimeMillis()
     }
 
     /**
@@ -367,6 +551,7 @@ public class BlockDownloadCall(
         token.onInterrupt { response.close() }
         response.use { httpResponse ->
             noteContentMd5(httpResponse)
+            if (httpResponse.code == 429) throw RateLimited(retryAfterMillis(httpResponse))
             if (useRanges && httpResponse.code != 206 && !(httpResponse.code == 200 && block.startOffset == 0L)) {
                 throw BlockFailed(
                     downloadError(ErrorCode.SERVER_CANCELED, "HTTP ${httpResponse.code}", httpResponse.code),
@@ -484,6 +669,7 @@ public class BlockDownloadCall(
             return failure(ErrorCode.UNKNOWN, "完成后的文件长度不符")
         }
         store.clearDirty(taskId)
+        serialDownloads.remove(taskId)
         monitor.onStage(taskId, Stage.COMMIT, elapsedMs(commitStarted))
         if (!delegateStatus) store.markCompleted(taskId)
         listener.onProgress(store.downloaded(taskId), reportedTotal)
@@ -686,6 +872,12 @@ public class BlockDownloadCall(
         private val logger: Logger = Logger.getLogger("com.arturoyi.fastdownload.engine.BlockDownloadCall")
         private val sharedLocks: PathFileLock = PathFileLock()
 
+        /** 这次进程里收到过 429 的任务。再次开始时不再并行。 */
+        private val serialDownloads = ConcurrentHashMap.newKeySet<String>()
+
+        /** `Retry-After` 最多等待这么久，避免一次头字段把下载线程堵住太久。 */
+        private const val MAX_RETRY_AFTER_MS: Long = 30_000L
+
         private fun matches(file: File, total: Long): Boolean = file.isFile && file.length() == total
     }
 }
@@ -698,3 +890,12 @@ public class BlockDownloadCall(
 private class BlockFailed(
     val error: DownloadError,
 ) : IOException(error.message)
+
+/**
+ * 服务器要求放慢请求。还没有写入这一次响应的正文。
+ *
+ * @property retryAfterMs 下一次请求前要等待的时间，单位毫秒。
+ */
+private class RateLimited(
+    val retryAfterMs: Long,
+) : Exception("HTTP 429")

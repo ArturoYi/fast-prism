@@ -72,6 +72,30 @@ class EnqueueActionTest {
     }
 
     /**
+     * 删除后同一条标识可以再登记，状态回到已添加。
+     */
+    @Test
+    fun doNotEnqueueStartsAgainAfterDelete() {
+        val store = InMemoryBreakpointStore()
+        val dispatcher = dispatcher(store, root = null)
+        try {
+            val first = dispatcher.enqueue(
+                request(EnqueueAction.DO_NOT_ENQUEUE_IF_EXISTING, downloadOnEnqueue = false),
+            )
+            dispatcher.delete(first)
+            dispatcher.drain()
+            assertEquals(Status.DELETED, store.get(first)?.status)
+            val second = dispatcher.enqueue(
+                request(EnqueueAction.DO_NOT_ENQUEUE_IF_EXISTING, downloadOnEnqueue = false),
+            )
+            assertEquals(first, second)
+            assertEquals(Status.ADDED, store.get(second)?.status)
+        } finally {
+            dispatcher.close()
+        }
+    }
+
+    /**
      * 更新请求头和优先级，断点还在。
      */
     @Test

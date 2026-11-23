@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">相册清理</string>
+
+    <string name="tab_clean">清理</string>
+    <string name="tab_groups">分组</string>
+    <string name="tab_settings">设置</string>
+
+    <string name="clean_title">清理</string>
+    <string name="clean_subtitle">找出重复和不太清楚的照片。第一次扫描要你自己开始。</string>
+    <string name="space_caption">大约可释放</string>
+    <string name="candidate_count">%1$d 张可以删除</string>
+    <string name="applied">已经释放 %1$s</string>
+    <string name="loading_index">正在读取上次的结果</string>
+
+    <string name="action_start">开始扫描</string>
+    <string name="action_resume">继续扫描</string>
+    <string name="action_rescan">重新扫描</string>
+    <string name="action_cancel">取消扫描</string>
+    <string name="action_delete">删除</string>
+    <string name="action_restore">恢复</string>
+    <string name="action_load_more">加载更多</string>
+    <string name="action_back">返回</string>
+
+    <string name="empty_never">点下方按钮，开始第一次扫描</string>
+    <string name="empty_partial">扫描还没完成。点下方按钮继续。</string>
+    <string name="empty_none">这次没有可删除的重复照片</string>
+    <string name="empty_groups">扫描之后，相似的照片会出现在这里</string>
+    <string name="empty_partial_groups">扫描还没完成。回到清理页可以继续。</string>
+    <string name="empty_groups_none">这次没有分成组</string>
+    <string name="empty_recycle">回收站是空的</string>
+    <string name="empty_recycle_wait">删除照片之后，可以在这里恢复</string>
+
+    <string name="permission_needed">需要允许读取照片才能扫描</string>
+    <string name="permission_granted">可以读取照片</string>
+    <string name="permission_missing">还不能读取照片</string>
+    <string name="scan_cancelled">扫描已取消</string>
+    <string name="scan_progress">扫描进度</string>
+    <string name="index_broken">相册索引打不开</string>
+    <string name="action_failed">这一步没有完成</string>
+    <string name="photo_missing">照片已经不在相册里</string>
+    <string name="restore_unavailable">这次删除不能恢复</string>
+
+    <string name="reason_exact">完全重复</string>
+    <string name="reason_near">看起来几乎一样</string>
+    <string name="reason_blurry">画面模糊</string>
+    <string name="reason_small">尺寸过小</string>
+    <string name="reason_over">过曝</string>
+    <string name="reason_under">欠曝</string>
+    <string name="reason_screenshot">截图</string>
+    <string name="reason_cache">缓存图片</string>
+    <string name="reason_semantic">语义相近</string>
+    <string name="reason_unknown">建议删除</string>
+    <string name="reason_separator">、</string>
+    <string name="candidate_detail">留下 #%1$d · %2$s</string>
+
+    <string name="group_exact">完全相同</string>
+    <string name="group_near">看起来几乎一样</string>
+    <string name="group_burst">连拍</string>
+    <string name="group_quality">画质偏低</string>
+    <string name="group_screenshot">截图</string>
+    <string name="group_semantic">语义相近</string>
+    <string name="group_detail">%1$d 张 · %2$s</string>
+
+    <string name="phase_query">正在读取相册</string>
+    <string name="phase_index">正在写入索引</string>
+    <string name="phase_fingerprint">正在计算特征</string>
+    <string name="phase_dedup">正在分组</string>
+    <string name="phase_score">正在选出保留</string>
+    <string name="phase_done">扫描完成</string>
+
+    <string name="delete_title">删除这张照片？</string>
+    <string name="delete_body_trash">系统会再确认一次。Android 11 及以上可以恢复。</string>
+    <string name="delete_body_gone">删除后找不回来。</string>
+    <string name="delete_confirm">删除</string>
+    <string name="delete_keep">留下</string>
+
+    <string name="groups_title">分组</string>
+    <string name="groups_subtitle">每组留下一张，其余可以在清理页删除。</string>
+
+    <string name="recycle_title">回收站</string>
+    <string name="recycle_subtitle">已经删除、还可以恢复的照片。</string>
+    <string name="recycle_batch">%1$d 张照片</string>
+    <string name="recycle_until">保留到 %1$s</string>
+    <string name="recycle_restored">已经恢复</string>
+
+    <string name="settings_title">设置</string>
+    <string name="settings_subtitle">主题、语言和读取权限。照片只留在这台设备上。</string>
+    <string name="settings_theme">主题</string>
+    <string name="theme_dark">深色</string>
+    <string name="theme_light">浅色</string>
+    <string name="settings_language">语言</string>
+    <string name="settings_recycle">回收站</string>
+    <string name="settings_recycle_body">查看还能恢复的照片。</string>
+    <string name="settings_permission">读取照片</string>
+    <string name="settings_version">当前版本</string>
+</resources>

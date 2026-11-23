@@ -13,7 +13,7 @@ function articleIcon(navigation: SdkArticle['navigation']) {
   return navigation.icon
 }
 
-export async function useSdkDoc() {
+export function useSdkDoc() {
   const route = useRoute()
   const { localePath } = useDocusI18n()
   const sdkRoot = computed(() => localePath('/sdks').replace(/\/$/, ''))
@@ -29,7 +29,9 @@ export async function useSdkDoc() {
 
   const section = computed(() => id.value ? sdkSection(id.value) : null)
 
-  const { data: articles } = await useAsyncData(
+  // 两次 useAsyncData 必须在 await 之前同步调用。
+  // 中间一旦 await，客户端导航会在组件挂载后才执行第二次请求，触发 NUXT_E3003。
+  const articlesData = useAsyncData(
     () => id.value ? `sdk-articles-${id.value}` : 'sdk-articles-idle',
     () => {
       if (!id.value) return Promise.resolve([] as SdkArticle[])
@@ -40,6 +42,25 @@ export async function useSdkDoc() {
     },
     { watch: [id] },
   )
+
+  const contentPath = computed(() => slug.value ? `/sdk/${id.value}/${slug.value}` : '')
+
+  const pageData = useAsyncData(
+    () => contentPath.value ? `sdk-doc-${contentPath.value}` : 'sdk-doc-idle',
+    () => {
+      if (!contentPath.value) return Promise.resolve(null)
+      return queryCollection('docs').path(contentPath.value).first()
+    },
+    { watch: [contentPath] },
+  )
+
+  const articles = articlesData.data
+  const page = pageData.data
+  const ready = Promise.all([articlesData, pageData])
+  const settled = computed(() => {
+    const states = [articlesData.status.value, pageData.status.value]
+    return states.every(state => state === 'success' || state === 'error')
+  })
 
   const ordered = computed(() => {
     const prefix = `/sdk/${id.value}/`
@@ -72,23 +93,13 @@ export async function useSdkDoc() {
     }]
   })
 
-  const contentPath = computed(() => slug.value ? `/sdk/${id.value}/${slug.value}` : '')
   const redirectTo = computed(() => {
     const first = ordered.value[0]
     if (!id.value || slug.value || !first) return ''
     return publicPath(first.path)
   })
 
-  const { data: page } = await useAsyncData(
-    () => contentPath.value ? `sdk-doc-${contentPath.value}` : 'sdk-doc-idle',
-    () => {
-      if (!contentPath.value) return Promise.resolve(null)
-      return queryCollection('docs').path(contentPath.value).first()
-    },
-    { watch: [contentPath] },
-  )
-
   const active = computed(() => Boolean(id.value))
 
-  return { id, slug, page, navigation, active, redirectTo }
+  return { id, slug, page, navigation, active, redirectTo, settled, ready }
 }

@@ -4,23 +4,45 @@ definePageMeta({
 })
 
 const { isOpen } = useAssistant()
-const { page, navigation, redirectTo } = await useSdkDoc()
-
-if (redirectTo.value) {
-  await navigateTo(redirectTo.value, { replace: true })
-}
-else if (!page.value) {
-  throw createError({ statusCode: 404, statusMessage: '没有这份 SDK 文档', fatal: true })
-}
+const { page, navigation, redirectTo, settled, ready } = useSdkDoc()
 
 useSeoMeta({
-  title: page.value?.title,
-  description: page.value?.description,
+  title: () => page.value?.title,
+  description: () => page.value?.description,
 })
+
+if (import.meta.client) {
+  watch([settled, redirectTo, page], () => {
+    if (!settled.value) return
+    if (redirectTo.value) {
+      navigateTo(redirectTo.value, { replace: true })
+      return
+    }
+    if (!page.value) {
+      showError(createError({ statusCode: 404, statusMessage: '没有这份 SDK 文档', fatal: true }))
+    }
+  }, { immediate: true })
+}
+
+if (import.meta.server) {
+  await ready
+  if (redirectTo.value) {
+    await navigateTo(redirectTo.value, { replace: true })
+  }
+  else if (!page.value) {
+    throw createError({ statusCode: 404, statusMessage: '没有这份 SDK 文档', fatal: true })
+  }
+}
 </script>
 
 <template>
-  <UContainer v-if="page">
+  <div
+    v-if="!page"
+    class="sdk-loading"
+  >
+    <DocsLoader label="正在加载" />
+  </div>
+  <UContainer v-else>
     <UPage>
       <template
         v-if="!isOpen"
@@ -52,3 +74,12 @@ useSeoMeta({
     </UPage>
   </UContainer>
 </template>
+
+<style scoped>
+.sdk-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - var(--ui-header-height, 64px));
+}
+</style>

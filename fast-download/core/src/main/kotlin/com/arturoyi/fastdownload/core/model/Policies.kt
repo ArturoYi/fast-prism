@@ -57,7 +57,7 @@ public enum class EnqueueAction {
     /** 按已有任务的状态决定更新哪些字段。 */
     UPDATE_ACCORDINGLY,
 
-    /** 已有任务时拒绝新的入队。 */
+    /** 已有任务时拒绝新的入队。已删除的记录会重新登记。 */
     DO_NOT_ENQUEUE_IF_EXISTING,
 
     /** 保留已有文件，为新任务生成不冲突的文件名。 */
