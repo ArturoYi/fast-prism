@@ -10,7 +10,7 @@ android {
     defaultConfig {
         applicationId = "com.arturoyi.fastdownload.sample"
         versionCode = 1
-        versionName = "1.0.1-rc"
+        versionName = "1.0.2-rc"
     }
 
     buildFeatures {
@@ -21,7 +21,6 @@ android {
 dependencies {
     implementation(project(":fast-download:api"))
     implementation(project(":fast-download:notify"))
-    implementation(project(":fast-download:okhttp"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)

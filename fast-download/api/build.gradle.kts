@@ -9,7 +9,7 @@ version = libs.versions.fastdownload.get()
 sdkPublish {
     artifactId.set("fast-download-api")
     displayName.set("FastDownload API")
-    description.set("FastDownloader 门面、主线程回调、Kotlin DSL 与 Java Builder")
+    description.set("FastDownloader 门面、主线程回调、协程 await、进度 Flow、Kotlin DSL 与 Java Builder")
 }
 
 android {
@@ -25,7 +25,7 @@ dependencies {
     api(project(":fast-download:android"))
     implementation(libs.androidx.core.ktx)
     api(libs.androidx.lifecycle.runtime)
-    implementation(libs.kotlinx.coroutines.android)
+    api(libs.kotlinx.coroutines.android)
 
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)

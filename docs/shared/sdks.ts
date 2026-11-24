@@ -25,7 +25,7 @@ export const sdkCatalog: readonly SdkEntry[] = [
   {
     id: 'fast-download',
     name: 'FastDownload',
-    version: '1.0.0-rc',
+    version: '1.0.2-rc',
     summary: '把文件下载到应用内部目录。对外入口是 FastDownloader，回调在主线程。',
     docPath: '/sdks/fast-download/overview',
     links: [

@@ -9,7 +9,7 @@ version = libs.versions.fastdownload.get()
 sdkPublish {
     artifactId.set("fast-download-engine")
     displayName.set("FastDownload Engine")
-    description.set("下载、命令队列和断点")
+    description.set("下载、命令队列、断点和 OkHttp 客户端")
 }
 
 dependencies {

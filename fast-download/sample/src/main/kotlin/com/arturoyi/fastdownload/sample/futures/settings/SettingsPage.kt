@@ -352,7 +352,7 @@ private fun SettingsPreview() {
         SettingsContent(
             theme = AppTheme.Dark,
             language = AppLanguage.Chinese,
-            version = "1.0.1-rc",
+            version = "1.0.2-rc",
             onTheme = {},
             onLanguage = {},
             onViewConfig = {},

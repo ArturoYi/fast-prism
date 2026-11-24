@@ -20,8 +20,6 @@ dependencies {
             "android",
             "api",
             "notify",
-            "okhttp",
-            "ktx",
             "cronet",
             "rx",
         ).forEach { module ->

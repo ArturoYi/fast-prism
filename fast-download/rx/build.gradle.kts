@@ -22,7 +22,7 @@ android {
 }
 
 dependencies {
-    api(project(":fast-download:ktx"))
+    api(project(":fast-download:api"))
     api(libs.rxjava)
     implementation(libs.kotlinx.coroutines.rx3)
 
